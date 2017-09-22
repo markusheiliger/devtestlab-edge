@@ -1,0 +1,170 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "adminUsername": {
+            "type": "string",
+            "minLength": 1,
+            "metadata": {
+                "description": "Remote desktop user Id"
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Remote desktop user password. Must be a strong password"
+            }
+        },
+        "certificateStoreValue": {
+            "type": "string",
+            "allowedValues": [ "My" ],
+            "defaultValue": "My",
+            "metadata": {
+                "description": "The store name where the cert will be deployed in the virtual machine"
+            }
+        },
+        "certificate": {
+            "type": "string",
+            "minLength": 1,
+            "metadata": {
+                "description": "Certificate as Base64 encoded string."
+            }
+        },
+        "certificatePassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Certificate password for installation."
+            }
+        },
+        "certificateThumbprint": {
+            "type": "string",
+            "minLength": 1,
+            "metadata": {
+                "description": "Certificate thumbprint for identification in the local certificate store."
+            }
+        }
+    },
+    "variables": {
+        "clusterName": "[resourceGroup().name]",
+        "clusterLocation": "[resourceGroup().location]",
+        "clusterSecret": "ClusterCertificate",
+        "vmImagePublisher": "MicrosoftWindowsServer",
+        "vmImageOffer": "WindowsServer",
+        "vmImageSku": "2016-Datacenter-with-Containers",
+        "vmImageVersion": "latest",
+        "loadBalancedAppPort1": 80,
+        "loadBalancedAppPort2": 443,
+        "clusterProtectionLevel": "EncryptAndSign",
+        "storageAccountType": "Standard_LRS",
+        "supportLogStorageAccountType": "Standard_LRS",
+        "applicationDiagnosticsStorageAccountType": "Standard_LRS",
+        "nt0InstanceCount": 5
+    },
+    "resources": [
+        {
+            "name": "[variables('clusterName')]",
+            "type": "Microsoft.KeyVault/vaults",
+            "apiVersion": "2015-06-01",
+            "location": "[variables('clusterLocation')]",
+            "tags": {},
+            "properties": {
+                "enabledForDeployment": true,
+                "enabledForTemplateDeployment": false,
+                "enabledForVolumeEncryption": false,
+                "tenantId": "[subscription().tenantId]",
+                "sku": {
+                    "name": "standard",
+                    "family": "A"
+                },
+                "accessPolicies": []
+            }
+        },
+        {
+            "name": "[concat(variables('clusterName'), '/', variables('clusterSecret'))]",
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2015-06-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('clusterName'))]"
+            ],
+            "properties": {
+                "value": "[base64(concat('{ \"data\":\"', parameters('certificate'), '\", \"dataType\":\"pfx\", \"password\":\"', parameters('certificatePassword'), '\" }'))]"
+            }
+        },
+        {
+            "name": "QuickstartTemplate",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('clusterName'), variables('clusterSecret'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/service-fabric-secure-cluster-5-node-1-nodetype/azuredeploy.json",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "clusterLocation": {
+                        "value": "[variables('clusterLocation')]"
+                    },
+                    "clusterName": {
+                        "value": "[variables('clusterName')]"
+                    },
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "adminPassword": {
+                        "value": "[parameters('adminPassword')]"
+                    },
+                    "vmImagePublisher": {
+                        "value": "[variables('vmImagePublisher')]"
+                    },
+                    "vmImageOffer": {
+                        "value": "[variables('vmImageOffer')]"
+                    },
+                    "vmImageSku": {
+                        "value": "[variables('vmImageSku')]"
+                    },
+                    "vmImageVersion": {
+                        "value": "[variables('vmImageVersion')]"
+                    },
+                    "loadBalancedAppPort1": {
+                        "value": "[variables('loadBalancedAppPort1')]"
+                    },
+                    "loadBalancedAppPort2": {
+                        "value": "[variables('loadBalancedAppPort2')]"
+                    },
+                    "certificateStoreValue": {
+                        "value": "[parameters('certificateStoreValue')]"
+                    },
+                    "certificateThumbprint": {
+                        "value": "[parameters('certificateThumbprint')]"
+                    },
+                    "sourceVaultValue": {
+                        "value": "[resourceId('Microsoft.KeyVault/vaults', variables('clusterName'))]"
+                    },
+                    "certificateUrlValue": {
+                        "value": "[reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('clusterName'), variables('clusterSecret'))).secretUriWithVersion]"
+                    },
+                    "clusterProtectionLevel": {
+                        "value": "[variables('clusterProtectionLevel')]"
+                    },
+                    "storageAccountType": {
+                        "value": "[variables('storageAccountType')]"
+                    },
+                    "supportLogStorageAccountType": {
+                        "value": "[variables('supportLogStorageAccountType')]"
+                    },
+                    "applicationDiagnosticsStorageAccountType": {
+                        "value": "[variables('applicationDiagnosticsStorageAccountType')]"
+                    },
+                    "nt0InstanceCount": {
+                        "value": "[variables('nt0InstanceCount')]"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {
+    }
+}
