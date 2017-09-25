@@ -45,7 +45,7 @@
         }
     },
     "variables": {
-        "clusterName": "[resourceGroup().name]",
+        "clusterName": "[toLower(resourceGroup().name)]",
         "clusterLocation": "[resourceGroup().location]",
         "clusterSecret": "ClusterCertificate",
         "vmImagePublisher": "MicrosoftWindowsServer",
