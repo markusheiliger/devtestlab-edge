@@ -1,0 +1,99 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "adminUsername": {
+            "type": "string",
+            "minLength": 3,
+            "metadata": {
+                "description": "Cluster node admin username."
+            }
+        },
+        "adminPublicKey": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Cluster node admin public key."
+            }
+        },
+        "servicePrincipalClientId": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Cluster service principal ID."
+            }
+        },
+        "servicePrincipalClientSecret": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Cluster service principal Secret."
+            }
+        },
+        "masterCount": {
+            "type": "int",
+            "defaultValue": 1,
+            "metadata": {
+                "description": "The number of Kubernetes masters for the cluster."
+            },            
+            "minValue": 1,
+            "maxValue": 5
+        },
+        "agentCount": {
+            "type": "int",
+            "defaultValue": 3,
+            "metadata": {
+                "description": "The number of agents for the cluster.  This value can be from 1 to 100 (note, for Kubernetes clusters you will also get 1 or 2 public agents in addition to these seleted masters)"
+            },
+            "minValue": 1,
+            "maxValue": 100
+        }
+    },
+    "variables": {
+        "dnsNamePrefix": "[resourceGroup().name]",
+        "agentVMSize": "Standard_D2_v2",
+        "orchestratorType": "Kubernetes"
+    },
+    "resources": [
+        {
+            "name": "QuickstartTemplate",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/101-acs-kubernetes/azuredeploy.json",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "dnsNamePrefix": {
+                        "value": "[variables('dnsNamePrefix')]"
+                    },
+                    "agentCount": {
+                        "value": "[parameters('agentCount')]"
+                    },
+                    "agentVMSize": {
+                        "value": "[variables('agentVMSize')]"
+                    },
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "orchestratorType": {
+                        "value": "[variables('orchestratorType')]"
+                    },
+                    "masterCount": {
+                        "value": "[parameters('masterCount')]"
+                    },
+                    "sshRSAPublicKey": {
+                        "value": "[parameters('adminPublicKey')]"
+                    },
+                    "servicePrincipalClientId": {
+                        "value": "[parameters('servicePrincipalClientId')]"
+                    },
+                    "servicePrincipalClientSecret": {
+                        "value": "[parameters('servicePrincipalClientSecret')]"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}
