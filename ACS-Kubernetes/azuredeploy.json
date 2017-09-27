@@ -32,7 +32,7 @@
             "defaultValue": 1,
             "metadata": {
                 "description": "The number of Kubernetes masters for the cluster."
-            },            
+            },
             "minValue": 1,
             "maxValue": 5
         },
@@ -49,14 +49,27 @@
     "variables": {
         "dnsNamePrefix": "[resourceGroup().name]",
         "agentVMSize": "Standard_D2_v2",
-        "orchestratorType": "Kubernetes"
+        "orchestratorType": "Kubernetes",
+        "roleDefinition_Contributor": "b24988ac-6180-42a0-ab88-20f7382dd24c"
     },
     "resources": [
+        {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2017-05-01",
+            "name": "ClusterServicePrincipal",
+            "properties": {
+                "roleDefinitionId": "[variables('roleDefinition_Contributor')]",
+                "principalId": "[parameters('servicePrincipalClientId')]",
+                "scope": "[resourceGroup().id]"
+            }
+        },
         {
             "name": "QuickstartTemplate",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2015-01-01",
-            "dependsOn": [],
+            "dependsOn": [
+                "[resourceId('Microsoft.Authorization/roleAssignments', 'ClusterServicePrincipal')]"
+            ],
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
