@@ -50,13 +50,14 @@
         "dnsNamePrefix": "[resourceGroup().name]",
         "agentVMSize": "Standard_D2_v2",
         "orchestratorType": "Kubernetes",
-        "roleDefinition_Contributor": "b24988ac-6180-42a0-ab88-20f7382dd24c"
+        "roleDefinition_Contributor": "b24988ac-6180-42a0-ab88-20f7382dd24c",
+        "roleAssignment_Name": "[guid(deployment().name)]"
     },
     "resources": [
         {
             "type": "Microsoft.Authorization/roleAssignments",
             "apiVersion": "2017-05-01",
-            "name": "ClusterServicePrincipal",
+            "name": "[variables('roleAssignment_Name')]",
             "properties": {
                 "roleDefinitionId": "[variables('roleDefinition_Contributor')]",
                 "principalId": "[parameters('servicePrincipalClientId')]",
@@ -68,7 +69,7 @@
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2015-01-01",
             "dependsOn": [
-                "[resourceId('Microsoft.Authorization/roleAssignments', 'ClusterServicePrincipal')]"
+                "[resourceId('Microsoft.Authorization/roleAssignments', variables('roleAssignment_Name'))]"
             ],
             "properties": {
                 "mode": "Incremental",
