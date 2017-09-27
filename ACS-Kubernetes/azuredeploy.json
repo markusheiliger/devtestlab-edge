@@ -51,13 +51,13 @@
         "agentVMSize": "Standard_D2_v2",
         "orchestratorType": "Kubernetes",
         "roleDefinition_Contributor": "b24988ac-6180-42a0-ab88-20f7382dd24c",
-        "roleAssignment_Name": "[guid(deployment().name)]"
+        "roleAssignment_Name": "[guid(resourceGroup().id, deployment().name)]"
     },
     "resources": [
         {
+            "name": "[variables('roleAssignment_Name')]",
             "type": "Microsoft.Authorization/roleAssignments",
             "apiVersion": "2017-05-01",
-            "name": "[variables('roleAssignment_Name')]",
             "properties": {
                 "roleDefinitionId": "[variables('roleDefinition_Contributor')]",
                 "principalId": "[parameters('servicePrincipalClientId')]",
@@ -65,7 +65,7 @@
             }
         },
         {
-            "name": "QuickstartTemplate",
+            "name": "[concat(deployment().name, '-QuickstartTemplate')]",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2015-01-01",
             "dependsOn": [
