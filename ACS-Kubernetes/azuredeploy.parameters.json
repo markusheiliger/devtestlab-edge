@@ -2,11 +2,20 @@
   "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "adminUserName": {
-      "value": "SFAdmin"
+    "adminUsername": {
+      "value": "ACSAdmin"
     },
-    "adminPassword": {
-      "value": "P@ssword1"
+    "adminPublicKey": {
+      "value": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCtEA8Ia7StFhJuc718aMTwSZz+zzeSO+cc7vAHfRp8Lo8X3tEZPFyMo6PyRYZawgWhb0ohSjoP8gCOI/OfyzxVKFnmJXPsy4YZctpLlg87XfloUkxMK89JHPC0nLWm33BVjdJcWEUrvTccqk9fBer1vaO/lJ1QrsM7wpmfanodZW/kkowakUxxzOh1U8gUsyAqNa9+zods/de+8GEWlTCIF2Vo7uvx/5xRxPWy3dBVgDN9kEAAmJrn0U6QmXZ5w91vx3787pQ9Zte/fHmRjA4D0KdG9DlKqXKvPiFu9zOQ0CPoTUJD1PaNpPxR+UUcL3QdUT2lWzdTibGbnU3nnv1F markushe@MARKUSHE-SB"
+    },
+    "servicePrincipalObjectId": {
+      "value": "e5850881-c3c3-4648-b66a-f1ec6a0a7ad4"
+    },
+    "servicePrincipalClientId": {
+      "value": "0f87aa29-3d5e-4dff-81a1-f98ed8c0a846"
+    },
+    "servicePrincipalClientSecret": {
+      "value": "qVYwiyFZDfxMHTAJRcje"
     }
   }
 }

@@ -15,16 +15,22 @@
                 "description": "Cluster node admin public key."
             }
         },
+        "servicePrincipalObjectId": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Cluster service principal object ID."
+            }
+        },
         "servicePrincipalClientId": {
             "type": "securestring",
             "metadata": {
-                "description": "Cluster service principal ID."
+                "description": "Cluster service principal client ID."
             }
         },
         "servicePrincipalClientSecret": {
             "type": "securestring",
             "metadata": {
-                "description": "Cluster service principal Secret."
+                "description": "Cluster service principal client Secret."
             }
         },
         "masterCount": {
@@ -50,18 +56,64 @@
         "dnsNamePrefix": "[resourceGroup().name]",
         "agentVMSize": "Standard_D2_v2",
         "orchestratorType": "Kubernetes",
-        "roleDefinition_Contributor": "b24988ac-6180-42a0-ab88-20f7382dd24c",
+        "roleDefinition_Contributor": "[resourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
         "roleAssignment_Name": "[guid(resourceGroup().id, deployment().name)]"
     },
     "resources": [
         {
+            "condition":true,
             "name": "[variables('roleAssignment_Name')]",
             "type": "Microsoft.Authorization/roleAssignments",
             "apiVersion": "2017-05-01",
             "properties": {
                 "roleDefinitionId": "[variables('roleDefinition_Contributor')]",
-                "principalId": "[parameters('servicePrincipalClientId')]",
+                "principalId": "[parameters('servicePrincipalObjectId')]",
                 "scope": "[resourceGroup().id]"
+            }
+        },
+        {
+            "condition":true,
+            "name": "[concat(deployment().name, '-QuickstartTemplate')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Authorization/roleAssignments', variables('roleAssignment_Name'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/101-acs-kubernetes/azuredeploy.json",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "dnsNamePrefix": {
+                        "value": "[variables('dnsNamePrefix')]"
+                    },
+                    "agentCount": {
+                        "value": "[parameters('agentCount')]"
+                    },
+                    "agentVMSize": {
+                        "value": "[variables('agentVMSize')]"
+                    },
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "orchestratorType": {
+                        "value": "[variables('orchestratorType')]"
+                    },
+                    "masterCount": {
+                        "value": "[parameters('masterCount')]"
+                    },
+                    "sshRSAPublicKey": {
+                        "value": "[parameters('adminPublicKey')]"
+                    },
+                    "servicePrincipalClientId": {
+                        "value": "[parameters('servicePrincipalClientId')]"
+                    },
+                    "servicePrincipalClientSecret": {
+                        "value": "[parameters('servicePrincipalClientSecret')]"
+                    }
+                }
             }
         }
     ],

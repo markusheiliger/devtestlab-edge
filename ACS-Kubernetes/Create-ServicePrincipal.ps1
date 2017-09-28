@@ -1,15 +1,27 @@
 param(
-    [Parameter(Mandatory=$false)]
-    [string] $ApplicationId = $([System.Guid]::NewGuid()),
+    [Parameter(Mandatory=$true)]
+    [string] $ApplicationName,
      
     [Parameter(Mandatory=$false)]
-    [string] $ApplicationSecret = $([System.Guid]::NewGuid())
+    [string] $ApplicationSecret = $(-join ((65..90) + (97..122) | Get-Random -Count 20 | % {[char]$_})),
+
+    [switch] $Force
 )
 
-$principal = New-AzureRmADServicePrincipal -ApplicationId $ApplicationId -Password $ApplicationSecret
-$principalInfo = Join-Path $env:TEMP $($ApplicationId + ".txt")
+Get-AzureRmADServicePrincipal -SearchString $ApplicationName | % -Begin { if ($Force -eq $false) { throw "Service Principal '$ApplicationName' already exists." } } -Process { 
+    $objectId = $_.Id
+    "Removing Service Principal with object ID '$objectId'"
+    Remove-AzureRmADServicePrincipal -ObjectId $objectId -Force 
+}
 
-"Service Principal ID:      $ApplicationId" | Out-File -FilePath $principalInfo -Append
-"Service Principal Secret:  $ApplicationSecret" | Out-File -FilePath $principalInfo -Append
+$principal = New-AzureRmADServicePrincipal -DisplayName $ApplicationName -Password $ApplicationSecret
+$principalInfo = Join-Path $env:TEMP $($principal.DisplayName + ".txt")
+
+Remove-Item -Path $principalInfo -Force -ErrorAction SilentlyContinue | Out-Null
+
+"Service Principal Name:                $($principal.DisplayName)" | Out-File -FilePath $principalInfo -Append
+"Service Principal Object ID:           $($principal.Id)" | Out-File -FilePath $principalInfo -Append
+"Service Principal Application ID:      $($principal.ApplicationId)" | Out-File -FilePath $principalInfo -Append
+"Service Principal Application Secret:  $ApplicationSecret" | Out-File -FilePath $principalInfo -Append
 
 notepad $principalInfo
