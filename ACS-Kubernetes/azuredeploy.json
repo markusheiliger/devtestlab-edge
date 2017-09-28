@@ -81,6 +81,7 @@
             ],
             "properties": {
                 "mode": "Incremental",
+                "validationLevel": "Template",
                 "templateLink": {
                     "uri": "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/101-acs-kubernetes/azuredeploy.json",
                     "contentVersion": "1.0.0.0"
