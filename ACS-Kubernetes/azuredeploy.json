@@ -61,7 +61,6 @@
     },
     "resources": [
         {
-            "condition":true,
             "name": "[variables('roleAssignment_Name')]",
             "type": "Microsoft.Authorization/roleAssignments",
             "apiVersion": "2017-05-01",
@@ -72,10 +71,9 @@
             }
         },
         {
-            "condition":true,
             "name": "[concat(deployment().name, '-QuickstartTemplate')]",
             "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2015-01-01",
+            "apiVersion": "2017-05-01",
             "dependsOn": [
                 "[resourceId('Microsoft.Authorization/roleAssignments', variables('roleAssignment_Name'))]"
             ],
