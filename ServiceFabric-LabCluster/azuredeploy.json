@@ -2,6 +2,17 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "clusterOS": {
+            "type": "string",
+            "allowedValues": [
+                "Windows",
+                "Linux"
+            ],
+            "defaultValue": "Windows",
+            "metadata": {
+                "description": "Select the cluster OS."
+            }
+        },
         "adminUsername": {
             "type": "string",
             "minLength": 1,
@@ -39,10 +50,6 @@
     "variables": {
         "clusterName": "[toLower(resourceGroup().name)]",
         "clusterSecret": "ClusterCertificate",
-        "vmImagePublisher": "MicrosoftWindowsServer",
-        "vmImageOffer": "WindowsServer",
-        "vmImageSku": "2016-Datacenter-with-Containers",
-        "vmImageVersion": "latest",
         "loadBalancedAppPort1": 80,
         "loadBalancedAppPort2": 443,
         "nt0InstanceCount": 5
@@ -78,6 +85,7 @@
             }
         },
         {
+            "condition": "[equals(parameters('clusterOS'), 'Windows')]",
             "name": "QuickstartTemplate",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2015-01-01",
@@ -101,16 +109,73 @@
                         "value": "[parameters('adminPassword')]"
                     },
                     "vmImagePublisher": {
-                        "value": "[variables('vmImagePublisher')]"
+                        "value": "MicrosoftWindowsServer"
                     },
                     "vmImageOffer": {
-                        "value": "[variables('vmImageOffer')]"
+                        "value": "WindowsServer"
                     },
                     "vmImageSku": {
-                        "value": "[variables('vmImageSku')]"
+                        "value": "2016-Datacenter-with-Containers"
                     },
                     "vmImageVersion": {
-                        "value": "[variables('vmImageVersion')]"
+                        "value": "latest"
+                    },
+                    "loadBalancedAppPort1": {
+                        "value": "[variables('loadBalancedAppPort1')]"
+                    },
+                    "loadBalancedAppPort2": {
+                        "value": "[variables('loadBalancedAppPort2')]"
+                    },
+                    "certificateThumbprint": {
+                        "value": "[parameters('certificateThumbprint')]"
+                    },
+                    "sourceVaultResourceId": {
+                        "value": "[resourceId('Microsoft.KeyVault/vaults', variables('clusterName'))]"
+                    },
+                    "certificateUrlValue": {
+                        "value": "[reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('clusterName'), variables('clusterSecret'))).secretUriWithVersion]"
+                    },
+                    "nt0InstanceCount": {
+                        "value": "[variables('nt0InstanceCount')]"
+                    }
+                }
+            }
+        },
+        {
+            "condition": "[equals(parameters('clusterOS'), 'Linux')]",
+            "name": "QuickstartTemplate",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('clusterName'), variables('clusterSecret'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/service-fabric-cluster-ubuntu-5-node-1-nodetype/azuredeploy.json",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "clusterName": {
+                        "value": "[variables('clusterName')]"
+                    },
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "adminPassword": {
+                        "value": "[parameters('adminPassword')]"
+                    },
+                    "vmImagePublisher": {
+                        "value": "Microsoft.Azure.ServiceFabric"
+                    },
+                    "vmImageOffer": {
+                        "value": "UbuntuServer"
+                    },
+                    "vmImageSku": {
+                        "value": "16.04"
+                    },
+                    "vmImageVersion": {
+                        "value": "6.0.11"
                     },
                     "loadBalancedAppPort1": {
                         "value": "[variables('loadBalancedAppPort1')]"
