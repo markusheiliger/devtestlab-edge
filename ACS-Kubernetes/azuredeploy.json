@@ -9,6 +9,12 @@
                 "description": "Cluster node admin username."
             }
         },
+        "adminPrivateKey": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Cluster node admin private key."
+            }
+        },
         "adminPublicKey": {
             "type": "securestring",
             "metadata": {
@@ -33,6 +39,13 @@
                 "description": "Cluster service principal client Secret."
             }
         },
+        "publishDashboard": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Make the dashboard publicly availalbe (no need to use Kubectl)."
+            }
+        },
         "masterCount": {
             "type": "int",
             "defaultValue": 1,
@@ -54,6 +67,7 @@
     },
     "variables": {
         "dnsNamePrefix": "[resourceGroup().name]",
+        "adminPrivateKeyEncoded": "[base64(parameters('adminPrivateKey'))]",
         "agentVMSize": "Standard_D2_v2",
         "orchestratorType": "Kubernetes",
         "roleDefinition_Contributor": "[resourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
@@ -111,6 +125,34 @@
                     },
                     "servicePrincipalClientSecret": {
                         "value": "[parameters('servicePrincipalClientSecret')]"
+                    }
+                }
+            }
+        },
+        {
+            "condition": "[parameters('publishDashboard')]",
+            "name": "[concat(deployment().name, '-Dashboard')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', concat(deployment().name, '-QuickstartTemplate'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "validationLevel": "Template",
+                "templateLink": {
+                    "uri": "[uri(deployment().properties.templateLink.uri, 'extensions/dashboard.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "ClusterKeyEncoded": {
+                        "value": "[variables('adminPrivateKeyEncoded')]"
+                    },
+                    "ClusterAdmin": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "ClusterMaster": {
+                        "value": "[reference(concat('Microsoft.Resources/deployments/', deployment().name, '-QuickstartTemplate'), '2017-05-01').outputs.masterFQDN.value]"
                     }
                 }
             }
