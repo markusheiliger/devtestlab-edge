@@ -57,8 +57,9 @@
             "displayName": "appSettings"
           },
           "properties": {
+            "WEBSITES_PORT": "8080",
             "DOCKER_CUSTOM_IMAGE_NAME": "markusheiliger/kubectlproxy:latest",
-            "DOCKER_CUSTOM_IMAGE_RUN_COMMAND": "nginx"
+            "DOCKER_CUSTOM_IMAGE_RUN_COMMAND": "[concat(' -a ', parameters('ClusterAdmin'), ' -k ', parameters('ClusterKeyEncoded'), ' -m ', parameters('ClusterMaster'))]"
           }
         }
       ]
