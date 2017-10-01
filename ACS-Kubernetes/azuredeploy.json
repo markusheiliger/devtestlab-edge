@@ -41,7 +41,7 @@
         },
         "publishDashboard": {
             "type": "bool",
-            "defaultValue": false,
+            "defaultValue": "false",
             "metadata": {
                 "description": "Make the dashboard publicly availalbe (no need to use Kubectl)."
             }
