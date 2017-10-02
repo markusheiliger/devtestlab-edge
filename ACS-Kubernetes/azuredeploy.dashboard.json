@@ -13,8 +13,8 @@
     }
   },
   "variables": {
-    "siteName": "[concat(resourceGroup().name, 'dashboard')]",
-    "servicePlanName": "[concat(resourceGroup().name, 'serviceplan')]"
+    "siteName": "[concat(resourceGroup().name, '-dashboard')]",
+    "servicePlanName": "[concat(resourceGroup().name, '-serviceplan')]"
   },
   "resources": [
     {
