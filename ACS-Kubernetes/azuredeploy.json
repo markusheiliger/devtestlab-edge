@@ -45,6 +45,13 @@
             "metadata": {
                 "description": "Make the dashboard publicly availalbe (no need to use Kubectl)."
             }
+        },        
+        "enableRegistry": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Create a dedicated registry for the kubernetes cluster."
+            }
         },
         "masterCount": {
             "type": "int",
@@ -166,6 +173,24 @@
                     "ClusterMaster": {
                         "value": "[reference(concat('Microsoft.Resources/deployments/', deployment().name, '-QuickstartTemplate'), '2017-05-01').outputs.masterFQDN.value]"
                     }
+                }
+            }
+        },
+        {
+            "condition": "[parameters('enableRegistry')]",
+            "name": "[concat(deployment().name, '-Registry')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', concat(deployment().name, '-QuickstartTemplate'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(parameters('_artifactsLocation'), '/azuredeploy.registry.json', parameters('_artifactsLocationSasToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
                 }
             }
         }
