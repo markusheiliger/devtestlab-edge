@@ -88,20 +88,22 @@ function New-DevTestLabEnvironment {
 
         # read parameter file values into HT
         if ($ParameterFile) {
-            "Reading values form parameter file '$ParameterFile' ..."
+            "Reading values from parameter file '$ParameterFile' ..."
             $ParameterFileData = Get-Content -Path $ParameterFile | Out-String | ConvertFrom-Json
             $ParameterFileData.parameters | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name | ForEach-Object {
                 $ParameterData.Set_Item([string] $_, [string] ($ParameterFileData.parameters | Select-Object -ExpandProperty $_).value)
             }
-            $ParameterData | Format-Table
         }
 
         # read param_* arg values into HT 
-        $ParameterArgs | ConvertTo-Array -RemoveNull -RemoveEmpty | ForEach-Object {
-            if ("$_" -ne "" -and "$_" -match '^-param_(.*)') {
-                [string] $key = $Matches[1]                
-            } elseif ( $key ) {
-                $ParameterData.Set_Item($key, [string] $_)
+        if ($ParameterArgs) {
+            "Reading values from parameter arguments ..."
+            $ParameterArgs | ConvertTo-Array -RemoveNull -RemoveEmpty | ForEach-Object {
+                if ("$_" -ne "" -and "$_" -match '^-param_(.*)') {
+                    [string] $key = $Matches[1]                
+                } elseif ( $key ) {
+                    $ParameterData.Set_Item($key, [string] $_)
+                }
             }
         }
 
