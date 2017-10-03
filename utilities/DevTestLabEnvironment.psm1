@@ -76,13 +76,16 @@ function New-DevTestLabEnvironment {
 
         $lab = Find-AzureRmResource -ResourceType "Microsoft.DevTestLab/labs" -ResourceNameEquals $LabName 
         if ($lab -eq $null) { throw "Unable to find lab $LabName in subscription $SubscriptionId." } 
-    
+        $lab
+
         $repository = Get-AzureRmResource -ResourceGroupName $lab.ResourceGroupName -ResourceType 'Microsoft.DevTestLab/labs/artifactsources' -ResourceName $LabName -ApiVersion 2016-05-15 | Where-Object { $RepositoryName -in ($_.Name, $_.Properties.displayName) } | Select-Object -First 1
         if ($repository -eq $null) { throw "Unable to find repository $RepositoryName in lab $LabName." } 
-    
+        $repository
+
         $template = Get-AzureRmResource -ResourceGroupName $lab.ResourceGroupName -ResourceType "Microsoft.DevTestLab/labs/artifactSources/armTemplates" -ResourceName "$LabName/$($repository.Name)" -ApiVersion 2016-05-15  | Where-Object { $TemplateName -in ($_.Name, $_.Properties.displayName) } | Select-Object -First 1
         if ($template -eq $null) { throw "Unable to find template $TemplateName in lab $LabName." } 
-
+        $template
+        
         # init hashtable to create parameter value map
         $ParameterData = @{}
 
@@ -96,7 +99,7 @@ function New-DevTestLabEnvironment {
 
         # read param_* arg values into HT 
         $ParameterArgs | ConvertTo-Array -RemoveNull -RemoveEmpty | ForEach-Object {
-            if ($_ -ne "" -and $_ -match '^-param_(.*)') {
+            if ("$_" -ne "" -and "$_" -match '^-param_(.*)') {
                 [string] $key = $Matches[1]                
             } elseif ( $key ) {
                 $ParameterData.Set_Item($key, [string] $_)
