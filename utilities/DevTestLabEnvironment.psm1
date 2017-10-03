@@ -127,6 +127,7 @@ function New-DevTestLabEnvironment {
         $templateProperties = @{ "deploymentProperties" = @{ "armTemplateId" = "$($template.ResourceId)"; "parameters" = $templateParameters }; } 
 
         # create a new environment
+        "Creating new environment '$EnvironmentName' in lab '$LabName' for user '$UserId' ..."
         New-AzureRmResource -Location $Lab.Location -ResourceGroupName $lab.ResourceGroupName -Properties $templateProperties -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId/$EnvironmentName" -ApiVersion '2016-05-15' -Force 
     }
     
