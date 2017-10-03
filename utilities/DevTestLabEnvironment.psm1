@@ -122,7 +122,6 @@ function New-DevTestLabEnvironment {
         # combine template parameters and properties (HT)
         $templateParameters = $ParameterData.Keys | ForEach-Object { @{ "name" = "$_"; "value" = "$($ParameterData[$_])" } } | ConvertTo-Array
         $templateProperties = @{ "deploymentProperties" = @{ "armTemplateId" = "$($template.ResourceId)"; "parameters" = $templateParameters }; } 
-        $templateProperties | ConvertTo-Json -Depth 100
 
         # create a new environment
         "Creating new environment '$EnvironmentName' in lab '$LabName' for user '$UserId' ..."
