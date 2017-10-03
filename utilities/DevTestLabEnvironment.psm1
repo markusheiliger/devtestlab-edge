@@ -151,7 +151,7 @@ function Remove-DevTestLabEnvironment {
     [CmdletBinding()]
     param (
         [string] [Parameter(Mandatory=$true)] $LabName,
-        [string] [Parameter(Mandatory=$true)] $EnvironmentName,
+        [string] $EnvironmentName,
         
         [string] $UserId = $((Get-AzureRmADUser -UserPrincipalName (Get-AzureRmContext).Account).Id.Guid)
     )
@@ -166,10 +166,20 @@ function Remove-DevTestLabEnvironment {
         $lab = Find-AzureRmResource -ResourceType "Microsoft.DevTestLab/labs" -ResourceNameEquals $LabName 
         if ($lab -eq $null) { throw "Unable to find lab $LabName in subscription $SubscriptionId." } 
 
-        $env = Get-AzureRmResource -ResourceGroupName $lab.ResourceGroupName -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId/$EnvironmentName" -ApiVersion 2016-05-15 | Select-Object -First 1
-        if ($env -eq $null) { throw "Unable to find environent $EnvironmentName in lab $LabName." } 
+        if ($EnvironmentName) {
 
-        Remove-AzureRmResource -ResourceId $env.ResourceId -ApiVersion '2016-05-15' -Force
+            $env = Get-AzureRmResource -ResourceGroupName $lab.ResourceGroupName -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId/$EnvironmentName" -ApiVersion 2016-05-15 | Select-Object -First 1
+            if ($env -eq $null) { throw "Unable to find environent $EnvironmentName in lab $LabName." } 
+
+            Remove-AzureRmResource -ResourceId $env.ResourceId -ApiVersion '2016-05-15' -Force
+
+        } else {
+
+            Get-AzureRmResource -ResourceGroupName $lab.ResourceGroupName -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId" -ApiVersion 2016-05-15 | Select-Object -ExpandProperty ResourceId | ConvertTo-Array | ForEach-Object { 
+
+                Remove-AzureRmResource -ResourceId $_ -ApiVersion '2016-05-15' -Force 
+            }
+        }
     }
     
     end {
