@@ -6,6 +6,9 @@ function ConvertTo-Array {
 
     [CmdletBinding()]
     param (
+        [parameter(ValueFromPipeline)]
+        $value,
+
         [switch] $RemoveNull,
         [switch] $RemoveEmpty
     )
@@ -15,8 +18,8 @@ function ConvertTo-Array {
     }
     
     process {
-        $skip = ($RemoveNull -and $_ -eq $null) -or ($RemoveEmpty -and $_ -eq "")
-        if (-not $skip) { $array += $_ }
+        $skip = ($RemoveNull -and $value -eq $null) -or ($RemoveEmpty -and $value -eq "")
+        if (-not $skip) { $array += $value }
     }
     
     end { 
