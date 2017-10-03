@@ -113,7 +113,7 @@ function New-DevTestLabEnvironment {
         }
 
         # write some debug output
-        $ParameterData | Format-Table | Write-Debug
+        $ParameterData | Format-Table
 
         # combine template parameters and properties (HT)
         $templateParameters = $ParameterData.Keys | ForEach-Object { @{ "name" = "$_"; "value" = "$($ParameterData[$_])" } } | ConvertTo-Array
