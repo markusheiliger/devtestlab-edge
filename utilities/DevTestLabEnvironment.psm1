@@ -11,16 +11,16 @@ function ConvertTo-Array {
     )
 
     begin { 
-        $array = @(); 
+        $array = @()
     }
     
     process {
         $skip = ($RemoveNull -and $_ -eq $null) -or ($RemoveEmpty -and $_ -eq "")
-        if (-not $skip) { $array += $_; }
+        if (-not $skip) { $array += $_ }
     }
     
     end { 
-        return ,$array; 
+        return $array;
     }
 }
 
