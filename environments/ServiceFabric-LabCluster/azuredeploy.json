@@ -148,7 +148,7 @@
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2015-01-01",
             "dependsOn": [
-                "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('clusterName'), variables('clusterSecret'))]"
+                "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('vaultName'), variables('vaultSecret'))]"
             ],
             "properties": {
                 "mode": "Incremental",
@@ -188,10 +188,10 @@
                         "value": "[parameters('certificateThumbprint')]"
                     },
                     "sourceVaultId": {
-                        "value": "[resourceId('Microsoft.KeyVault/vaults', variables('clusterName'))]"
+                        "value": "[resourceId('Microsoft.KeyVault/vaults', variables('vaultName'))]"
                     },
                     "certificateUrlValue": {
-                        "value": "[reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('clusterName'), variables('clusterSecret'))).secretUriWithVersion]"
+                        "value": "[reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('vaultName'), variables('vaultSecret'))).secretUriWithVersion]"
                     },
                     "nt0InstanceCount": {
                         "value": "[variables('nt0InstanceCount')]"
