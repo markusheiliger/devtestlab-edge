@@ -125,7 +125,8 @@ function New-DevTestLabEnvironment {
         # combine template parameters and properties (HT)
         $templateParameters = $ParameterData.Keys | ForEach-Object { @{ "name" = "$_"; "value" = "$($ParameterData[$_])" } } | ConvertTo-Array
         $templateProperties = @{ "deploymentProperties" = @{ "armTemplateId" = "$($template.ResourceId)"; "parameters" = $templateParameters }; } 
-
+        $templateProperties | ConvertTo-Json -Depth 100
+        
         # create a new environment
         "Creating new environment '$EnvironmentName' in lab '$LabName' for user '$UserId' ..."
         New-AzureRmResource -Location $Lab.Location -ResourceGroupName $lab.ResourceGroupName -Properties $templateProperties -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId/$EnvironmentName" -ApiVersion '2016-05-15' -Force 
@@ -179,9 +180,7 @@ function Remove-DevTestLabEnvironment {
             $env = Get-AzureRmResource -ResourceGroupName $lab.ResourceGroupName -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId/$EnvironmentName" -ApiVersion 2016-05-15 -ErrorAction SilentlyContinue | Select-Object -First 1
             if ($env -eq $null) { throw "Unable to find environent $EnvironmentName in lab $LabName." } 
 
-            $env | FL *
-            
-            "Removing environment ($(env.ResourceId)) ..."
+            "Removing environment ($($env.ResourceId)) ..."
             Remove-AzureRmResource -ResourceId $env.ResourceId -ApiVersion '2016-05-15' -Force
 
         } else {
