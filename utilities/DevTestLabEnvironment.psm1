@@ -168,14 +168,14 @@ function Remove-DevTestLabEnvironment {
 
         if ($EnvironmentName) {
 
-            $env = Get-AzureRmResource -ResourceGroupName $lab.ResourceGroupName -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId/$EnvironmentName" -ApiVersion 2016-05-15 | Select-Object -First 1
+            $env = Get-AzureRmResource -ResourceGroupName $lab.ResourceGroupName -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId/$EnvironmentName" -ApiVersion 2016-05-15 -ErrorAction SilentlyContinue | Select-Object -First 1
             if ($env -eq $null) { throw "Unable to find environent $EnvironmentName in lab $LabName." } 
 
             Remove-AzureRmResource -ResourceId $env.ResourceId -ApiVersion '2016-05-15' -Force
 
         } else {
 
-            Get-AzureRmResource -ResourceGroupName $lab.ResourceGroupName -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId" -ApiVersion 2016-05-15 | Select-Object -ExpandProperty ResourceId | ForEach-Object { 
+            Get-AzureRmResource -ResourceGroupName $lab.ResourceGroupName -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId" -ApiVersion 2016-05-15 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ResourceId | ForEach-Object { 
 
                 Remove-AzureRmResource -ResourceId $_ -ApiVersion '2016-05-15' -Force 
             }
