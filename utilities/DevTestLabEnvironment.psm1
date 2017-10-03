@@ -124,10 +124,7 @@ function New-DevTestLabEnvironment {
 
         # combine template parameters and properties (HT)
         $templateParameters = $ParameterData.Keys | ForEach-Object { @{ "name" = "$_"; "value" = "$($ParameterData[$_])" } } | ConvertTo-Array
-        $templateParameters
-
         $templateProperties = @{ "deploymentProperties" = @{ "armTemplateId" = "$($template.ResourceId)"; "parameters" = $templateParameters }; } 
-        $templateProperties | ConvertTo-Json
 
         # create a new environment
         New-AzureRmResource -Location $Lab.Location -ResourceGroupName $lab.ResourceGroupName -Properties $templateProperties -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId/$EnvironmentName" -ApiVersion '2016-05-15' -Force 
