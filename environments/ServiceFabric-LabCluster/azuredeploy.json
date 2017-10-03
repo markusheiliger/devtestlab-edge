@@ -49,14 +49,15 @@
     },
     "variables": {
         "clusterName": "[toLower(resourceGroup().name)]",
-        "clusterSecret": "ClusterCertificate",
+        "vaultName": "[toLower(concat('v', uniqueString(variables('clusterName'))))]",
+        "vaultSecret": "ClusterCertificate",
         "loadBalancedAppPort1": 80,
         "loadBalancedAppPort2": 443,
         "nt0InstanceCount": 5
     },
     "resources": [
         {
-            "name": "[variables('clusterName')]",
+            "name": "[variables('vaultName')]",
             "type": "Microsoft.KeyVault/vaults",
             "apiVersion": "2015-06-01",
             "location": "[resourceGroup().location]",
@@ -74,11 +75,11 @@
             }
         },
         {
-            "name": "[concat(variables('clusterName'), '/', variables('clusterSecret'))]",
+            "name": "[concat(variables('vaultName'), '/', variables('vaultSecret'))]",
             "type": "Microsoft.KeyVault/vaults/secrets",
             "apiVersion": "2015-06-01",
             "dependsOn": [
-                "[resourceId('Microsoft.KeyVault/vaults', variables('clusterName'))]"
+                "[resourceId('Microsoft.KeyVault/vaults', variables('vaultName'))]"
             ],
             "properties": {
                 "value": "[base64(concat('{ \"data\":\"', parameters('certificate'), '\", \"dataType\":\"pfx\", \"password\":\"', parameters('certificatePassword'), '\" }'))]"
@@ -90,7 +91,7 @@
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2015-01-01",
             "dependsOn": [
-                "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('clusterName'), variables('clusterSecret'))]"
+                "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('vaultName'), variables('vaultSecret'))]"
             ],
             "properties": {
                 "mode": "Incremental",
@@ -130,10 +131,10 @@
                         "value": "[parameters('certificateThumbprint')]"
                     },
                     "sourceVaultResourceId": {
-                        "value": "[resourceId('Microsoft.KeyVault/vaults', variables('clusterName'))]"
+                        "value": "[resourceId('Microsoft.KeyVault/vaults', variables('vaultName'))]"
                     },
                     "certificateUrlValue": {
-                        "value": "[reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('clusterName'), variables('clusterSecret'))).secretUriWithVersion]"
+                        "value": "[reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('vaultName'), variables('vaultSecret'))).secretUriWithVersion]"
                     },
                     "nt0InstanceCount": {
                         "value": "[variables('nt0InstanceCount')]"
