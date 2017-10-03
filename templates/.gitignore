@@ -1,0 +1,3 @@
+# prevent parameter files to be tracked
+# =====================================
+**/*.parameters.json

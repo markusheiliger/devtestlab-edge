@@ -1,0 +1,24 @@
+{
+    "$schema": "https://raw.githubusercontent.com/Azure/azure-devtestlab/master/schemas/2016-11-28/dtlArtifacts.json",
+    "title": "Minikube",
+    "publisher": "Microsoft",
+    "description": "Minikube is a tool that makes it easy to run Kubernetes locally. Minikube runs a single-node Kubernetes cluster inside a VM on your laptop for users looking to try out Kubernetes or develop with it day-to-day.",
+    "tags": [
+        "Minikube",
+        "Kubernetes",
+        "Cluster",
+        "Containers",
+        "Go",
+        "CNCF"
+    ],
+    "iconUri": "https://raw.githubusercontent.com/Azure/azure-devtestlab/master/Artifacts/windows-minikube/Artifactfile.png",
+    "targetOsType": "Windows",
+    "runCommand": {
+        "commandToExecute": "[concat('powershell.exe -ExecutionPolicy bypass \"& ./Artifactfile.ps1\"')]"
+    },
+    "postDeployActions": [
+        {
+            "action": "restart"
+        }
+    ]
+}
