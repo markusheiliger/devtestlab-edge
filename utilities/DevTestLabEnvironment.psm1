@@ -119,14 +119,11 @@ function New-DevTestLabEnvironment {
             $ParameterData.Remove([string] $_) 
         }
 
-        # write some debug output
-        $ParameterData | Format-Table
-
         # combine template parameters and properties (HT)
         $templateParameters = $ParameterData.Keys | ForEach-Object { @{ "name" = "$_"; "value" = "$($ParameterData[$_])" } } | ConvertTo-Array
         $templateProperties = @{ "deploymentProperties" = @{ "armTemplateId" = "$($template.ResourceId)"; "parameters" = $templateParameters }; } 
         $templateProperties | ConvertTo-Json -Depth 100
-        
+
         # create a new environment
         "Creating new environment '$EnvironmentName' in lab '$LabName' for user '$UserId' ..."
         New-AzureRmResource -Location $Lab.Location -ResourceGroupName $lab.ResourceGroupName -Properties $templateProperties -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId/$EnvironmentName" -ApiVersion '2016-05-15' -Force 
@@ -227,6 +224,8 @@ function Test-DevTestLabEnvironment {
     )
     
     begin {
+
+        $exists = $false
     }
     
     process {
@@ -236,11 +235,13 @@ function Test-DevTestLabEnvironment {
         $lab = Find-AzureRmResource -ResourceType "Microsoft.DevTestLab/labs" -ResourceNameEquals $LabName 
         if ($lab -eq $null) { throw "Unable to find lab $LabName in subscription $SubscriptionId." } 
 
-        try     { return [bool] (Get-AzureRmResource -ResourceGroupName $lab.ResourceGroupName -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId/$EnvironmentName" -ApiVersion 2016-05-15 -ErrorAction SilentlyContinue | Select-Object -First 1) } 
-        catch   { return $false }        
+        try     { $exists = [bool] (Get-AzureRmResource -ResourceGroupName $lab.ResourceGroupName -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId/$EnvironmentName" -ApiVersion 2016-05-15 -ErrorAction SilentlyContinue | Select-Object -First 1) } 
+        catch   { }        
     }
     
     end {
+
+        return $exists
     }
 }
 
