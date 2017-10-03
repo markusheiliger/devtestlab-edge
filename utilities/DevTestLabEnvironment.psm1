@@ -20,7 +20,7 @@ function ConvertTo-Array {
     }
     
     end { 
-        return $array;
+        return $array
     }
 }
 
