@@ -76,25 +76,24 @@ function New-DevTestLabEnvironment {
 
         $lab = Find-AzureRmResource -ResourceType "Microsoft.DevTestLab/labs" -ResourceNameEquals $LabName 
         if ($lab -eq $null) { throw "Unable to find lab $LabName in subscription $SubscriptionId." } 
-        $lab
 
         $repository = Get-AzureRmResource -ResourceGroupName $lab.ResourceGroupName -ResourceType 'Microsoft.DevTestLab/labs/artifactsources' -ResourceName $LabName -ApiVersion 2016-05-15 | Where-Object { $RepositoryName -in ($_.Name, $_.Properties.displayName) } | Select-Object -First 1
         if ($repository -eq $null) { throw "Unable to find repository $RepositoryName in lab $LabName." } 
-        $repository
 
         $template = Get-AzureRmResource -ResourceGroupName $lab.ResourceGroupName -ResourceType "Microsoft.DevTestLab/labs/artifactSources/armTemplates" -ResourceName "$LabName/$($repository.Name)" -ApiVersion 2016-05-15  | Where-Object { $TemplateName -in ($_.Name, $_.Properties.displayName) } | Select-Object -First 1
         if ($template -eq $null) { throw "Unable to find template $TemplateName in lab $LabName." } 
-        $template
-        
+
         # init hashtable to create parameter value map
         $ParameterData = @{}
 
         # read parameter file values into HT
         if ($ParameterFile) {
+            "Reading values form parameter file '$ParameterFile' ..."
             $ParameterFileData = Get-Content -Path $ParameterFile | Out-String | ConvertFrom-Json
             $ParameterFileData.parameters | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name | ForEach-Object {
                 $ParameterData.Set_Item([string] $_, [string] ($ParameterFileData.parameters | Select-Object -ExpandProperty $_).value)
             }
+            $ParameterData | Format-Table
         }
 
         # read param_* arg values into HT 
@@ -111,7 +110,7 @@ function New-DevTestLabEnvironment {
         
         # remove unknown arguments        
         $ParameterData.Keys | Where-Object { $_ -notin $ParameterNames } | ConvertTo-Array | ForEach-Object { 
-            "Removing unknown template argument '$_'." | Write-Warning
+            "Removing unknown template argument '$_' ..." | Write-Warning
             $ParameterData.Remove([string] $_) 
         }
 
