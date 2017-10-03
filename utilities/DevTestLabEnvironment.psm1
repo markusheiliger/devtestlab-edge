@@ -173,7 +173,7 @@ function Remove-DevTestLabEnvironment {
         
         $lab = Find-AzureRmResource -ResourceType "Microsoft.DevTestLab/labs" -ResourceNameEquals $LabName 
         if ($lab -eq $null) { throw "Unable to find lab $LabName in subscription $SubscriptionId." } 
-
+    
         if ($EnvironmentName) {
 
             $env = Get-AzureRmResource -ResourceGroupName $lab.ResourceGroupName -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId/$EnvironmentName" -ApiVersion 2016-05-15 -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -197,3 +197,49 @@ function Remove-DevTestLabEnvironment {
 }
 
 Export-ModuleMember -Function Remove-DevTestLabEnvironment
+
+<# 
+ .Synopsis
+  Test if a Azure DevTest Labs environment exists.
+
+ .Description
+  Test if a Azure DevTest Labs environment exists.
+
+ .Parameter LabName
+  The name of the Azure DevTest Lab which contains the environment to delete.
+
+ .Parameter EnvironmentName
+  The name of the environment to delete.
+
+ .Parameter UserId
+  The object ID or the user who owns the environment to delete.  
+#>
+
+function Test-DevTestLabEnvironment {
+    
+    [CmdletBinding()]
+    param (
+        [string] [Parameter(Mandatory=$true)] $LabName,
+        [string] $EnvironmentName,
+        
+        [string] $UserId = $((Get-AzureRmADUser -UserPrincipalName (Get-AzureRmContext).Account).Id.Guid)
+    )
+    
+    begin {
+    }
+    
+    process {
+
+        $SubscriptionId = (Get-AzureRmContext).Subscription.Id
+        
+        $lab = Find-AzureRmResource -ResourceType "Microsoft.DevTestLab/labs" -ResourceNameEquals $LabName 
+        if ($lab -eq $null) { throw "Unable to find lab $LabName in subscription $SubscriptionId." } 
+
+        return [bool] (Get-AzureRmResource -ResourceGroupName $lab.ResourceGroupName -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId/$EnvironmentName" -ApiVersion 2016-05-15 -ErrorAction SilentlyContinue | Select-Object -First 1)
+    }
+    
+    end {
+    }
+}
+
+Export-ModuleMember -Function Test-DevTestLabEnvironment
