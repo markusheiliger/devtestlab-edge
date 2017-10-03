@@ -8,8 +8,12 @@ param(
     [switch] $Force
 )
 
-Get-AzureRmADServicePrincipal -SearchString $ApplicationName | % -Begin { if ($Force -eq $false) { throw "Service Principal '$ApplicationName' already exists." } } -Process { 
+Get-AzureRmADServicePrincipal -SearchString $ApplicationName | ForEach-Object { 
+
+    if ($Force -eq $false) { throw "Service Principal '$ApplicationName' already exists." }
+    
     $objectId = $_.Id
+    
     "Removing Service Principal with object ID '$objectId'"
     Remove-AzureRmADServicePrincipal -ObjectId $objectId -Force 
 }

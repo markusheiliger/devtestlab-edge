@@ -175,7 +175,7 @@ function Remove-DevTestLabEnvironment {
 
         } else {
 
-            Get-AzureRmResource -ResourceGroupName $lab.ResourceGroupName -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId" -ApiVersion 2016-05-15 | Select-Object -ExpandProperty ResourceId | ConvertTo-Array | ForEach-Object { 
+            Get-AzureRmResource -ResourceGroupName $lab.ResourceGroupName -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId" -ApiVersion 2016-05-15 | Select-Object -ExpandProperty ResourceId | ForEach-Object { 
 
                 Remove-AzureRmResource -ResourceId $_ -ApiVersion '2016-05-15' -Force 
             }
