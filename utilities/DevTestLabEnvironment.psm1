@@ -4,11 +4,23 @@
  
 function Get-DevTestLabContextUserId {
 
-    [string] $UserId = $((Get-AzureRmADUser -UserPrincipalName (Get-AzureRmContext).Account).Id.Guid)
+    [CmdletBinding()]
+    param()
 
-    if ($UserId) { return $UserId }
+    begin {        
+    }
 
-    return [string] (Get-AzureRmADServicePrincipal -ServicePrincipalName ((Get-AzureRmContext).Account.Id -split '@')[0]).Id.Guid
+    process {
+
+        [string] $UserId = $((Get-AzureRmADUser -UserPrincipalName (Get-AzureRmContext).Account).Id.Guid)
+
+        if ($UserId) { return $UserId }
+
+        return [string] (Get-AzureRmADServicePrincipal -ServicePrincipalName ((Get-AzureRmContext).Account.Id -split '@')[0]).Id.Guid
+    }
+
+    end {
+    }
 }
 
 Export-ModuleMember -Function Get-ContextUserId
