@@ -145,7 +145,7 @@ function New-DevTestLabEnvironment {
         # combine template parameters and properties (HT)
         $templateParameters = $ParameterData.Keys | ForEach-Object { 
             if ($ParameterData[$_] -is [array]) {
-                @{ "name" = "$_"; "value" = "$($ParameterData[$_] | ConvertTo-Json)" } 
+                @{ "name" = "$_"; "value" = "$($ParameterData[$_] | ConvertTo-Json -Compress)" } 
             } else {
                 @{ "name" = "$_"; "value" = "$($ParameterData[$_])" } 
             }
