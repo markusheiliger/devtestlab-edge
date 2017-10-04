@@ -128,7 +128,7 @@ function New-DevTestLabEnvironment {
                 if ("$_" -ne "" -and "$_" -match '^-param_(.*)') {
                     [string] $key = $Matches[1]                
                 } elseif ( $key ) {
-                    $ParameterData.Set_Item($key, [string] $_)
+                    $ParameterData.Set_Item($key, $_)
                 }
             }
         }
@@ -143,7 +143,7 @@ function New-DevTestLabEnvironment {
         }
 
         # combine template parameters and properties (HT)
-        $templateParameters = $ParameterData.Keys | ForEach-Object { @{ "name" = "$_"; "value" = "$($ParameterData[$_])" } } | ConvertTo-Array
+        $templateParameters = $ParameterData.Keys | ForEach-Object { @{ "name" = "$_"; "value" = $ParameterData[$_] } } | ConvertTo-Array
         $templateProperties = @{ "deploymentProperties" = @{ "armTemplateId" = "$($template.ResourceId)"; "parameters" = $templateParameters }; } 
         
         # create a new environment
