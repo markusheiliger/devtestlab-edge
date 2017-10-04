@@ -117,7 +117,7 @@ function New-DevTestLabEnvironment {
             "Reading values from parameter file '$ParameterFile' ..."
             $ParameterFileData = Get-Content -Path $ParameterFile | Out-String | ConvertFrom-Json
             $ParameterFileData.parameters | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name | ForEach-Object {
-                $ParameterData.Set_Item([string] $_, [string] ($ParameterFileData.parameters | Select-Object -ExpandProperty $_).value)
+                $ParameterData.Set_Item([string] $_, ($ParameterFileData.parameters | Select-Object -ExpandProperty $_).value)
             }
         }
 
