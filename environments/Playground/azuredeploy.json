@@ -2,8 +2,8 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "userId": {
-            "type": "string",
+        "contributorUserIds": {
+            "type": "array",
             "metadata": {
                 "description": "Your user object ID."
             }
@@ -14,13 +14,16 @@
     },
     "resources": [
         {
-            "condition": "[not(empty(parameters('userId')))]",
-            "name": "[guid(parameters('userId'))]",
+            "name": "[parameters('contributorUserIds')[copyIndex()])]",
             "type": "Microsoft.Authorization/roleAssignments",
             "apiVersion": "2017-05-01",
+            "copy": {
+                "name": "roleAssignmentCopy",
+                "count": "[length(parameters('contributorUserIds'))]"
+            },
             "properties": {
                 "roleDefinitionId": "[variables('roleDefinition_Contributor')]",
-                "principalId": "[parameters('userId')]",
+                "principalId": "[parameters('contributorUserIds')[copyIndex()]]",
                 "scope": "[resourceGroup().id]"
             }
         }
