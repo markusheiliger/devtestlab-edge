@@ -1,6 +1,15 @@
 
 #Requires -Version 3.0
 #Requires -Module AzureRM.Resources
+ 
+function Get-ContextUserId {
+
+    [string] $UserId = $((Get-AzureRmADUser -UserPrincipalName (Get-AzureRmContext).Account).Id.Guid)
+
+    if ($UserId) { return $UserId }
+
+    return [string] (Get-AzureRmADServicePrincipal -ServicePrincipalName ((Get-AzureRmContext).Account.Id -split '@')[0]).Id.Guid
+}
 
 function ConvertTo-Array {
 
@@ -63,7 +72,7 @@ function New-DevTestLabEnvironment {
         [string] [Parameter(Mandatory=$true)] $EnvironmentName,
         [string] [Parameter(Mandatory=$true)] $TemplateName,
         
-        [string] $UserId = $((Get-AzureRmADUser -UserPrincipalName (Get-AzureRmContext).Account).Id.Guid),
+        [string] $UserId = $(Get-ContextUserId),
         [string] $ParameterFile,
 
         [Parameter(ValueFromRemainingArguments=$true)]
@@ -158,7 +167,7 @@ function Remove-DevTestLabEnvironment {
         [string] [Parameter(Mandatory=$true)] $LabName,
         [string] $EnvironmentName,
         
-        [string] $UserId = $((Get-AzureRmADUser -UserPrincipalName (Get-AzureRmContext).Account).Id.Guid)
+        [string] $UserId = $(Get-ContextUserId)
     )
     
     begin {
@@ -219,7 +228,7 @@ function Test-DevTestLabEnvironment {
         [string] [Parameter(Mandatory=$true)] $LabName,
         [string] $EnvironmentName,
         
-        [string] $UserId = $((Get-AzureRmADUser -UserPrincipalName (Get-AzureRmContext).Account).Id.Guid)
+        [string] $UserId = $(Get-ContextUserId)
     )
     
     begin {
