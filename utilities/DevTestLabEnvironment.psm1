@@ -1,32 +1,9 @@
 
 #Requires -Version 3.0
 #Requires -Module AzureRM.Resources
- 
-function Get-DevTestLabContextUserId {
-
-    [CmdletBinding()]
-    param()
-
-    begin {        
-    }
-
-    process {
-
-        [string] $UserId = $((Get-AzureRmADUser -UserPrincipalName (Get-AzureRmContext).Account).Id.Guid)
-
-        if ($UserId) { return $UserId }
-
-        return [string] (Get-AzureRmADServicePrincipal -ServicePrincipalName ((Get-AzureRmContext).Account.Id -split '@')[0]).Id.Guid
-    }
-
-    end {
-    }
-}
-
-Export-ModuleMember -Function Get-DevTestLabContextUserId
 
 function ConvertTo-Array {
-
+    
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -49,6 +26,29 @@ function ConvertTo-Array {
         return ,$array
     }
 }
+
+function Get-DevTestLabContextUserId {
+
+    [CmdletBinding()]
+    param()
+
+    begin {        
+    }
+
+    process {
+
+        [string] $UserId = $((Get-AzureRmADUser -UserPrincipalName (Get-AzureRmContext).Account).Id.Guid)
+
+        if ($UserId) { return $UserId }
+
+        return [string] (Get-AzureRmADServicePrincipal -ServicePrincipalName ((Get-AzureRmContext).Account.Id -split '@')[0]).Id.Guid
+    }
+
+    end {
+    }
+}
+
+Export-ModuleMember -Function Get-DevTestLabContextUserId
 
 <# 
  .Synopsis
@@ -145,7 +145,7 @@ function New-DevTestLabEnvironment {
         # combine template parameters and properties (HT)
         $templateParameters = $ParameterData.Keys | ForEach-Object { @{ "name" = "$_"; "value" = "$($ParameterData[$_])" } } | ConvertTo-Array
         $templateProperties = @{ "deploymentProperties" = @{ "armTemplateId" = "$($template.ResourceId)"; "parameters" = $templateParameters }; } 
-
+        $templateProperties | ConvertTo-Json -Depth 10
         # create a new environment
         "Creating new environment '$EnvironmentName' in lab '$LabName' for user '$UserId' ..."
         New-AzureRmResource -Location $Lab.Location -ResourceGroupName $lab.ResourceGroupName -Properties $templateProperties -ResourceType 'Microsoft.DevTestLab/labs/users/environments' -ResourceName "$LabName/$UserId/$EnvironmentName" -ApiVersion '2016-05-15' -Force 
