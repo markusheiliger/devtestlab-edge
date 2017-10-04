@@ -143,7 +143,13 @@ function New-DevTestLabEnvironment {
         }
 
         # combine template parameters and properties (HT)
-        $templateParameters = $ParameterData.Keys | ForEach-Object { @{ "name" = "$_"; "value" = $ParameterData[$_] } } | ConvertTo-Array
+        $templateParameters = $ParameterData.Keys | ForEach-Object { 
+            if ($ParameterData[$_] -is [array]) {
+                @{ "name" = "$_"; "value" = "$($ParameterData[$_] | ConvertTo-Json)" } 
+            } else {
+                @{ "name" = "$_"; "value" = "$($ParameterData[$_])" } 
+            }
+        } | ConvertTo-Array
         $templateProperties = @{ "deploymentProperties" = @{ "armTemplateId" = "$($template.ResourceId)"; "parameters" = $templateParameters }; } 
         
         # create a new environment
