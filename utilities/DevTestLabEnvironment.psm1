@@ -23,7 +23,7 @@ function Get-DevTestLabContextUserId {
     }
 }
 
-Export-ModuleMember -Function Get-ContextUserId
+Export-ModuleMember -Function Get-DevTestLabContextUserId
 
 function ConvertTo-Array {
 
