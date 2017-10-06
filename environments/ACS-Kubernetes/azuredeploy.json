@@ -74,6 +74,7 @@
         }
     },
     "variables": {
+        "quickstartRepoRoot": "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/",
         "dnsNamePrefix": "[resourceGroup().name]",
         "agentVMSize": "Standard_D2_v2",
         "orchestratorType": "Kubernetes",
@@ -103,7 +104,7 @@
                 "mode": "Incremental",
                 "validationLevel": "Template",
                 "templateLink": {
-                    "uri": "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/101-acs-kubernetes/azuredeploy.json",
+                    "uri": "[concat(variables('quickstartRepoRoot'), '101-acs-kubernetes/azuredeploy.json')]",
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
