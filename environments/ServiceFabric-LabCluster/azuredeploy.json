@@ -48,7 +48,7 @@
         }
     },
     "variables": {
-        "quickstartRepoRoot": "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/",
+        "quickstartRepoRoot": "https://raw.githubusercontent.com/markusheiliger/azure-quickstart-templates/markusheiliger/sf-persistedStateDrive/",
         "clusterName": "[toLower(resourceGroup().name)]",
         "vaultName": "[toLower(concat('v', uniqueString(variables('clusterName'))))]",
         "vaultSecret": "ClusterCertificate",
@@ -139,6 +139,9 @@
                     },
                     "nt0InstanceCount": {
                         "value": "[variables('nt0InstanceCount')]"
+                    },
+                    "nodeDataDrive": {
+                        "value": "OS"
                     }
                 }
             }
@@ -196,6 +199,9 @@
                     },
                     "nt0InstanceCount": {
                         "value": "[variables('nt0InstanceCount')]"
+                    },
+                    "nodeDataDrive": {
+                        "value": "OS"
                     }
                 }
             }
