@@ -1,0 +1,197 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        
+        "agentIndex": {
+            "type": "int",
+            "minValue": 0
+        },
+        "agentSize": {
+            "type": "string",
+            "minLength": 1,
+            "defaultValue": "Standard_D2_v3"
+        },
+
+        "adminUsername": {
+            "type": "string",
+            "minLength": 1
+        },
+        "adminPassword": {
+            "type": "securestring"
+        },
+
+        "imagePublisher": {
+            "type": "string",
+            "minLength": 1
+        },
+        "imageOffer": {
+            "type": "string",
+            "minLength": 1
+        },
+        "imageSKU": {
+            "type": "string",
+            "minLength": 1
+        },
+        
+        "vstsAccount": {
+            "type": "string",
+            "minLength": 1
+        },
+        "personalAccessToken": {
+            "type": "securestring"
+        },
+        "poolName": {
+            "type": "string",
+            "defaultValue": "Default",
+            "minLength": 1
+        },
+        
+        "vnetName": {
+            "type": "string",
+            "minLength": 1
+        },
+        "vnetID": {
+            "type": "string",
+            "minLength": 1
+        },
+        "lbName": {
+            "type": "string",
+            "minLength": 1
+        },
+        "lbID": {
+            "type": "string",
+            "minLength": 1
+        },  
+        
+        "_artifactsLocation": {
+            "type": "string",
+            "defaultValue": "https://raw.githubusercontent.com/markusheiliger/devtestlab-templates/k8s-dashboard/ACS-Kubernetes"
+        },
+        "_artifactsLocationSasToken": {
+            "type": "securestring",
+            "defaultValue": ""
+        }
+    },
+    "variables": {
+        "resourcePrefix": "[toLower(concat('br', uniqueString(resourceGroup().id), padLeft(parameters('agentIndex'), 3, '0')))]",
+        "agentName": "[concat(variables('resourcePrefix'), '-agent')]",
+        "agentNIC": "[concat(variables('resourcePrefix'), '-nic')]",
+        "agentRDP": "[concat(variables('resourcePrefix'), '-rdp')]",
+
+
+        "storageAccountName": "[variables('resourcePrefix')]",
+        "storageAccountType": "Standard_LRS",
+        "availabilitySetName": "[concat(variables('resourcePrefix'), '-as')]",
+        "addressPrefix": "10.0.0.0/16",
+        "subnetName": "Rig",
+        "subnetPrefix": "10.0.0.0/24",
+        "publicIPAddressType": "Dynamic",
+        "vnetName": "[concat(variables('resourcePrefix'), '-vnet')]",
+        "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('vnetName'))]",
+        "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables ('subnetName'))]",
+        "publicIPAddressName": "[concat(variables('resourcePrefix'), '-pip')]",
+        "publicIPAddressID": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]",
+        "publicIPAddressDNS": "[variables('resourcePrefix')]",
+        "lbName": "[concat(variables('resourcePrefix'), '-lb')]",
+        "lbID": "[resourceId('Microsoft.Network/loadBalancers', variables('lbName'))]",
+        "frontEndIPConfigID": "[concat(variables('lbID'),'/frontendIPConfigurations/loadBalancerFrontend')]"
+    },
+    "resources": [
+        {
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[concat(variables('resourcePrefix'), copyindex())]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]",
+                "[concat('Microsoft.Network/loadBalancers/', parameters('lbName'))]",
+                "[concat('Microsoft.Network/loadBalancers/', parameters('lbName'), '/inboundNatRules/', 'RDP-VM', copyIndex())]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            },
+                            "loadBalancerBackendAddressPools": [
+                                {
+                                    "id": "[concat(variables('lbID'), '/backendAddressPools/LoadBalancerBackend')]"
+                                }
+                            ],
+                            "loadBalancerInboundNatRules": [
+                                {
+                                    "id": "[concat(variables('lbID'),'/inboundNatRules/RDP-VM', copyindex())]"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+          "apiVersion": "2015-06-15",
+          "type": "Microsoft.Network/loadBalancers/inboundNatRules",
+          "name": "[variables('agentRDP')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[concat('Microsoft.Network/loadBalancers/', parameters('lbName'))]"
+          ],
+          "properties": {
+            "frontendIPConfiguration": {
+              "id": "[variables('frontEndIPConfigID')]"
+            },
+            "protocol": "tcp",
+            "frontendPort": "[add(5000, parameters('agentIndex'))]",
+            "backendPort": 3389,
+            "enableFloatingIP": false
+          }
+        },
+        {
+          "apiVersion": "2016-04-30-preview",
+          "type": "Microsoft.Compute/virtualMachines",
+          "name": "[variables('agentName')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
+            "[concat('Microsoft.Network/networkInterfaces/', variables('agentNIC'))]",
+            "[concat('Microsoft.Compute/availabilitySets/', variables('availabilitySetName'))]"
+          ],
+          "properties": {
+            "availabilitySet": {
+              "id": "[resourceId('Microsoft.Compute/availabilitySets',variables('availabilitySetName'))]"
+            },
+            "hardwareProfile": {
+              "vmSize": "[parameters('agentSize')]"
+            },
+            "osProfile": {
+              "computerName": "[variables('agentName')]",
+              "adminUsername": "[parameters('adminUsername')]",
+              "adminPassword": "[parameters('adminPassword')]"
+            },
+            "storageProfile": {
+              "imageReference": {
+                "publisher": "[parameters('imagePublisher')]",
+                "offer": "[parameters('imageOffer')]",
+                "sku": "[parameters('imageSKU')]",
+                "version": "latest"
+              },
+              "osDisk": {
+                "createOption": "FromImage"
+              }
+            },
+            "networkProfile": {
+              "networkInterfaces": [
+                {
+                  "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('agentNIC'))]"
+                }
+              ]
+            }
+          }
+        }
+    ],
+    "outputs": {}
+}

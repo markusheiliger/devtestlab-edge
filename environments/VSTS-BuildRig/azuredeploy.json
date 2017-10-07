@@ -1,0 +1,238 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "agentOS": {
+            "type": "string",
+            "allowedValues": [
+                "Windows"
+            ],
+            "defaultValue": "Windows",
+            "metadata": {
+                "description": "Select the agent OS."
+            }
+        },
+        "agentCount": {
+            "type": "int",
+            "minValue": 1,
+            "maxValue": 10,
+            "defaultValue": "1",
+            "metadata": {
+                "description": "Number of agents in the rig"
+            }
+        },
+        "adminUsername": {
+            "type": "string",
+            "minLength": 1,
+            "metadata": {
+                "description": "Remote desktop user Id"
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Remote desktop user password. Must be a strong password"
+            }
+        },
+        "vstsAccount": {
+            "type": "string",
+            "metadata": {
+                "description": "The Visual Studio Team Services account name, that is, the first part of your VSTSAccount.visualstudio.com"
+            }
+        },
+        "personalAccessToken": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The personal access token to connect to VSTS"
+            }
+        },
+        "poolName": {
+            "type": "string",
+            "defaultValue": "Default",
+            "metadata": {
+                "description": "The Visual Studio Team Services build agent pool for this build agent to join. Use 'Default' if you don't have a separate pool."
+            }
+        },
+        "_artifactsLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "The base URI where artifacts required by this template are located. When the template is deployed using the accompanying scripts, a private location in the subscription will be used and this value will be automatically generated."
+            },
+            "defaultValue": "https://raw.githubusercontent.com/markusheiliger/devtestlab-templates/master/VSTS-BuildRig"
+        },
+        "_artifactsLocationSasToken": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The sasToken required to access _artifactsLocation.  When the template is deployed using the accompanying scripts, a sasToken will be automatically generated."
+            },
+            "defaultValue": ""
+        }
+    },
+    "variables": {
+        "resourcePrefix": "[toLower(concat('br', uniqueString(resourceGroup().id)))]",
+        "availabilitySetName": "[concat(variables('resourcePrefix'), '-as')]",
+        "addressPrefix": "10.0.0.0/16",
+        "subnetName": "Rig",
+        "subnetPrefix": "10.0.0.0/24",
+        "publicIPAddressType": "Dynamic",
+        "vnetName": "[concat(variables('resourcePrefix'), '-vnet')]",
+        "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('vnetName'))]",
+        "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables ('subnetName'))]",
+        "publicIPAddressName": "[concat(variables('resourcePrefix'), '-pip')]",
+        "publicIPAddressID": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]",
+        "publicIPAddressDNS": "[variables('resourcePrefix')]",
+        "lbName": "[concat(variables('resourcePrefix'), '-lb')]",
+        "lbID": "[resourceId('Microsoft.Network/loadBalancers', variables('lbName'))]",
+        "frontEndIPConfigID": "[concat(variables('lbID'),'/frontendIPConfigurations/loadBalancerFrontend')]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Compute/availabilitySets",
+            "name": "[variables('availabilitySetName')]",
+            "apiVersion": "2016-04-30-preview",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "platformFaultDomainCount": 2,
+                "platformUpdateDomainCount": 2,
+                "managed": true
+            }
+        },
+        {
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[variables('vnetName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('addressPrefix')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('subnetName')]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnetPrefix')]"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[variables('publicIPAddressName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
+                "dnsSettings": {
+                    "domainNameLabel": "[variables('publicIPAddressDNS')]"
+                }
+            }
+        },
+        {
+            "apiVersion": "2015-06-15",
+            "name": "[variables('lbName')]",
+            "type": "Microsoft.Network/loadBalancers",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]"
+            ],
+            "properties": {
+                "frontendIPConfigurations": [
+                    {
+                        "name": "LoadBalancerFrontend",
+                        "properties": {
+                            "publicIPAddress": {
+                                "id": "[variables('publicIPAddressID')]"
+                            }
+                        }
+                    }
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "LoadBalancerBackend"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[concat(deployment().name, '-Registry')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/availabilitySets', variables('availabilitySetName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+                "[resourceId('Microsoft.Network/loadBalancers', variables('lbName'))]"
+            ],
+            "copy": { 
+                "name": "agentCopy", 
+                "count": "[parameters('agentCount')]" 
+            }, 
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(parameters('_artifactsLocation'), '/azuredeploy.agent.json', parameters('_artifactsLocationSasToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "agentIndex": {
+                        "value": "[copyIndex()]"
+                    },
+                    "agentSize": {
+                        "value": "Standard_D2_v3"
+                    },
+            
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "adminPassword": {
+                        "value": "[parameters('adminPassword')]"
+                    },
+            
+                    "imagePublisher": {
+                        "value": ""
+                    },
+                    "imageOffer": {
+                        "value": ""
+                    },
+                    "imageSKU": {
+                        "value": ""
+                    },
+                    
+                    "vstsAccount": {
+                        "value": "[parameters('vstsAccount')]"
+                    },
+                    "personalAccessToken": {
+                        "value": "[parameters('personalAccessToken')]"
+                    },
+                    "poolName": {
+                        "value": "[parameters('poolName')]"
+                    },
+                    
+                    "vnetName": {
+                        "value": "[variables('vnetName')]"
+                    },
+                    "vnetID": {
+                        "value": "[variables('vnetID')]"
+                    },
+                    "lbName": {
+                        "value": "[variables('lbName')]"
+                    },
+                    "lbID": {
+                        "value": "[variables('lbID')]"
+                    },  
+                    
+                    "_artifactsLocation": {
+                        "value": "[parameters('_artifactsLocation')]"
+                    },
+                    "_artifactsLocationSasToken": {
+                        "value": "[parameters('_artifactsLocationSasToken')]"
+                    }
+            
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}
