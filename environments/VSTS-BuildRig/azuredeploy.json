@@ -1,7 +1,6 @@
 {
     "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
     "contentVersion": "1.0.0.0",
-
     "parameters": {
         "agentBase": {
             "type": "string",
@@ -58,32 +57,23 @@
             "defaultValue": ""
         }
     },
-
     "variables": {
         "resourcePrefix": "[take(concat('br', uniqueString(resourceGroup().id)),10)]",
-
         "vmName": "[concat(variables('resourcePrefix'), '-ag')]",
         "asName": "[concat(variables('resourcePrefix'), '-as')]",
-        
         "vnetName": "[concat(variables('resourcePrefix'), '-vnet')]",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
         "vnetPrefix": "10.0.0.0/16",
-        
         "snetName": "Rig",
         "snetID": "[concat(variables('vnetID'),'/subnets/', variables('snetName'))]",
         "snetPrefix": "10.0.0.0/24",
-        
         "pipName": "[concat(variables('resourcePrefix'), '-pip')]",
         "pipID": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]",
-        
         "nicName": "[concat(variables('resourcePrefix'), '-nic')]",
         "nicID": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]",
-        
         "lbName": "[concat(variables('resourcePrefix'), '-lb')]",
         "lbID": "[resourceId('Microsoft.Network/loadBalancers', variables('lbName'))]",
-        
         "frontEndIPConfigID": "[concat(variables('lbID'),'/frontendIPConfigurations/loadBalancerFrontend')]",
-        
         "agentBaseConfig": "[variables('agentBaseConfigs')[parameters('agentBase')]]",
         "agentBaseConfigs": {
             "Windows - VS2017 Enterprise (latest)": {
@@ -98,7 +88,6 @@
             }
         }
     },
-
     "resources": [
         {
             "type": "Microsoft.Compute/availabilitySets",
@@ -276,7 +265,7 @@
             }
         },
         {
-            "apiVersion": "2015-05-01-preview",
+            "apiVersion": "2015-06-15",
             "type": "Microsoft.Compute/virtualMachines/extensions",
             "name": "[concat(variables('vmName'), copyindex(), '/BuildAgent')]",
             "location": "[resourceGroup().location]",
@@ -285,17 +274,18 @@
                 "count": "[parameters('agentCount')]"
             },
             "dependsOn": [
-              "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'), copyindex())]"
+                "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'), copyindex())]"
             ],
             "properties": {
-              "publisher": "Microsoft.Compute",
-              "type": "CustomScriptExtension",
-              "typeHandlerVersion": "1.4",
-              "settings": {
-                "fileUris": "[variables('agentBaseConfig').scriptFiles]",
-                "commandToExecute": "[variables('agentBaseConfig').scriptCommand]"
-              }
+                "publisher": "Microsoft.Compute",
+                "type": "CustomScriptExtension",
+                "typeHandlerVersion": "1.9",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "fileUris": "[variables('agentBaseConfig').scriptFiles]",
+                    "commandToExecute": "[variables('agentBaseConfig').scriptCommand]"
+                }
             }
-          }
+        }
     ]
 }
