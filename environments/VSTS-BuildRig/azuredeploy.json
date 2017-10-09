@@ -1,56 +1,46 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
     "contentVersion": "1.0.0.0",
+
     "parameters": {
-        "agentOS": {
+        "agentBase": {
             "type": "string",
+            "defaultValue": "Windows - VS2017 Enterprise (latest)",
             "allowedValues": [
-                "Windows"
-            ],
-            "defaultValue": "Windows",
-            "metadata": {
-                "description": "Select the agent OS."
-            }
+                "Windows - VS2017 Enterprise (latest)"
+            ]
         },
         "agentCount": {
             "type": "int",
-            "minValue": 1,
-            "maxValue": 10,
-            "defaultValue": "1",
-            "metadata": {
-                "description": "Number of agents in the rig"
-            }
+            "defaultValue": 1,
+            "minValue": 1
+        },
+        "agentSize": {
+            "type": "string",
+            "defaultValue": "Standard_D2_v3",
+            "minLength": 1
+        },
+        "vstsAccount": {
+            "type": "string",
+            "minLength": 1
+        },
+        "vstsPool": {
+            "type": "string",
+            "minLength": 1
+        },
+        "vstsPAT": {
+            "type": "securestring"
         },
         "adminUsername": {
             "type": "string",
-            "minLength": 1,
             "metadata": {
-                "description": "Remote desktop user Id"
+                "description": "Admin username"
             }
         },
         "adminPassword": {
             "type": "securestring",
             "metadata": {
-                "description": "Remote desktop user password. Must be a strong password"
-            }
-        },
-        "vstsAccount": {
-            "type": "string",
-            "metadata": {
-                "description": "The Visual Studio Team Services account name, that is, the first part of your VSTSAccount.visualstudio.com"
-            }
-        },
-        "personalAccessToken": {
-            "type": "securestring",
-            "metadata": {
-                "description": "The personal access token to connect to VSTS"
-            }
-        },
-        "poolName": {
-            "type": "string",
-            "defaultValue": "Default",
-            "metadata": {
-                "description": "The Visual Studio Team Services build agent pool for this build agent to join. Use 'Default' if you don't have a separate pool."
+                "description": "Admin password"
             }
         },
         "_artifactsLocation": {
@@ -58,7 +48,7 @@
             "metadata": {
                 "description": "The base URI where artifacts required by this template are located. When the template is deployed using the accompanying scripts, a private location in the subscription will be used and this value will be automatically generated."
             },
-            "defaultValue": "https://raw.githubusercontent.com/markusheiliger/devtestlab-templates/master/VSTS-BuildRig"
+            "defaultValue": "https://raw.githubusercontent.com/markusheiliger/devtestlab-templates/k8s-dashboard/ACS-Kubernetes"
         },
         "_artifactsLocationSasToken": {
             "type": "securestring",
@@ -68,27 +58,51 @@
             "defaultValue": ""
         }
     },
+
     "variables": {
-        "resourcePrefix": "[toLower(concat('br', uniqueString(resourceGroup().id)))]",
-        "availabilitySetName": "[concat(variables('resourcePrefix'), '-as')]",
-        "addressPrefix": "10.0.0.0/16",
-        "subnetName": "Rig",
-        "subnetPrefix": "10.0.0.0/24",
-        "publicIPAddressType": "Dynamic",
+        "resourcePrefix": "[take(concat('br', uniqueString(resourceGroup().id)),10)]",
+
+        "vmName": "[concat(variables('resourcePrefix'), '-ag')]",
+        "asName": "[concat(variables('resourcePrefix'), '-as')]",
+        
         "vnetName": "[concat(variables('resourcePrefix'), '-vnet')]",
-        "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('vnetName'))]",
-        "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables ('subnetName'))]",
-        "publicIPAddressName": "[concat(variables('resourcePrefix'), '-pip')]",
-        "publicIPAddressID": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]",
-        "publicIPAddressDNS": "[variables('resourcePrefix')]",
+        "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "vnetPrefix": "10.0.0.0/16",
+        
+        "snetName": "Rig",
+        "snetID": "[concat(variables('vnetID'),'/subnets/', variables('snetName'))]",
+        "snetPrefix": "10.0.0.0/24",
+        
+        "pipName": "[concat(variables('resourcePrefix'), '-pip')]",
+        "pipID": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]",
+        
+        "nicName": "[concat(variables('resourcePrefix'), '-nic')]",
+        "nicID": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]",
+        
         "lbName": "[concat(variables('resourcePrefix'), '-lb')]",
         "lbID": "[resourceId('Microsoft.Network/loadBalancers', variables('lbName'))]",
-        "frontEndIPConfigID": "[concat(variables('lbID'),'/frontendIPConfigurations/loadBalancerFrontend')]"
+        
+        "frontEndIPConfigID": "[concat(variables('lbID'),'/frontendIPConfigurations/loadBalancerFrontend')]",
+        
+        "agentBaseConfig": "[variables('agentBaseConfigs')[parameters('agentBase')]]",
+        "agentBaseConfigs": {
+            "Windows - VS2017 Enterprise (latest)": {
+                "publisher": "MicrosoftVisualStudio",
+                "offer": "VisualStudio",
+                "sku": "VS-2017-Ent-Latest-WS2016",
+                "version": "latest",
+                "scriptFiles": [
+                    "[concat(parameters('_artifactsLocation'), '/azuredeploy.windows.ps1', parameters('_artifactsLocationSasToken'))]"
+                ],
+                "scriptCommand": "[concat('powershell.exe -ExecutionPolicy Unrestricted -Command .\\azuredeploy.windows.ps1 -vstsAccount ', parameters('vstsAccount'), ' -personalAccessToken ', parameters('vstsPAT'), ' -PoolName ', parameters('vstsPool'))]"
+            }
+        }
     },
+
     "resources": [
         {
             "type": "Microsoft.Compute/availabilitySets",
-            "name": "[variables('availabilitySetName')]",
+            "name": "[variables('asName')]",
             "apiVersion": "2016-04-30-preview",
             "location": "[resourceGroup().location]",
             "properties": {
@@ -99,20 +113,32 @@
         },
         {
             "apiVersion": "2015-06-15",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[variables('pipName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "dnsSettings": {
+                    "domainNameLabel": "[variables('resourcePrefix')]"
+                }
+            }
+        },
+        {
+            "apiVersion": "2015-06-15",
             "type": "Microsoft.Network/virtualNetworks",
             "name": "[variables('vnetName')]",
             "location": "[resourceGroup().location]",
             "properties": {
                 "addressSpace": {
                     "addressPrefixes": [
-                        "[variables('addressPrefix')]"
+                        "[variables('vnetPrefix')]"
                     ]
                 },
                 "subnets": [
                     {
-                        "name": "[variables('subnetName')]",
+                        "name": "[variables('snetName')]",
                         "properties": {
-                            "addressPrefix": "[variables('subnetPrefix')]"
+                            "addressPrefix": "[variables('snetPrefix')]"
                         }
                     }
                 ]
@@ -120,14 +146,40 @@
         },
         {
             "apiVersion": "2015-06-15",
-            "type": "Microsoft.Network/publicIPAddresses",
-            "name": "[variables('publicIPAddressName')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[concat(variables('nicName'), copyindex())]",
             "location": "[resourceGroup().location]",
+            "copy": {
+                "name": "nicLoop",
+                "count": "[parameters('agentCount')]"
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
+                "[concat('Microsoft.Network/loadBalancers/', variables('lbName'))]",
+                "[concat('Microsoft.Network/loadBalancers/', variables('lbName'), '/inboundNatRules/', 'RDP-VM', copyIndex())]"
+            ],
             "properties": {
-                "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
-                "dnsSettings": {
-                    "domainNameLabel": "[variables('publicIPAddressDNS')]"
-                }
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('snetID')]"
+                            },
+                            "loadBalancerBackendAddressPools": [
+                                {
+                                    "id": "[concat(variables('lbID'), '/backendAddressPools/LoadBalancerBackend')]"
+                                }
+                            ],
+                            "loadBalancerInboundNatRules": [
+                                {
+                                    "id": "[concat(variables('lbID'),'/inboundNatRules/RDP-VM', copyindex())]"
+                                }
+                            ]
+                        }
+                    }
+                ]
             }
         },
         {
@@ -136,7 +188,7 @@
             "type": "Microsoft.Network/loadBalancers",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[concat('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]"
+                "[concat('Microsoft.Network/publicIPAddresses/', variables('pipName'))]"
             ],
             "properties": {
                 "frontendIPConfigurations": [
@@ -144,7 +196,7 @@
                         "name": "LoadBalancerFrontend",
                         "properties": {
                             "publicIPAddress": {
-                                "id": "[variables('publicIPAddressID')]"
+                                "id": "[variables('pipID')]"
                             }
                         }
                     }
@@ -157,82 +209,93 @@
             }
         },
         {
-            "name": "[concat(deployment().name, '-Registry')]",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2017-05-01",
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Network/loadBalancers/inboundNatRules",
+            "name": "[concat(variables('lbName'), '/', 'RDP-VM', copyIndex())]",
+            "location": "[resourceGroup().location]",
+            "copy": {
+                "name": "lbNatLoop",
+                "count": "[parameters('agentCount')]"
+            },
             "dependsOn": [
-                "[resourceId('Microsoft.Compute/availabilitySets', variables('availabilitySetName'))]",
-                "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
-                "[resourceId('Microsoft.Network/loadBalancers', variables('lbName'))]"
+                "[concat('Microsoft.Network/loadBalancers/', variables('lbName'))]"
             ],
-            "copy": { 
-                "name": "agentCopy", 
-                "count": "[parameters('agentCount')]" 
-            }, 
             "properties": {
-                "mode": "Incremental",
-                "templateLink": {
-                    "uri": "[concat(parameters('_artifactsLocation'), '/azuredeploy.agent.json', parameters('_artifactsLocationSasToken'))]",
-                    "contentVersion": "1.0.0.0"
+                "frontendIPConfiguration": {
+                    "id": "[variables('frontEndIPConfigID')]"
                 },
-                "parameters": {
-                    "agentIndex": {
-                        "value": "[copyIndex()]"
+                "protocol": "tcp",
+                "frontendPort": "[copyIndex(5000)]",
+                "backendPort": 3389,
+                "enableFloatingIP": false
+            }
+        },
+        {
+            "apiVersion": "2016-04-30-preview",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[concat(variables('vmName'), copyindex())]",
+            "location": "[resourceGroup().location]",
+            "copy": {
+                "name": "virtualMachineLoop",
+                "count": "[parameters('agentCount')]"
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'), copyindex())]",
+                "[concat('Microsoft.Compute/availabilitySets/', variables('asName'))]"
+            ],
+            "properties": {
+                "availabilitySet": {
+                    "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('asName'))]"
+                },
+                "hardwareProfile": {
+                    "vmSize": "[parameters('agentSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[concat(variables('vmName'), copyIndex())]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[variables('agentBaseConfig').publisher]",
+                        "offer": "[variables('agentBaseConfig').offer]",
+                        "sku": "[variables('agentBaseConfig').sku]",
+                        "version": "[variables('agentBaseConfig').version]"
                     },
-                    "agentSize": {
-                        "value": "Standard_D2_v3"
-                    },
-            
-                    "adminUsername": {
-                        "value": "[parameters('adminUsername')]"
-                    },
-                    "adminPassword": {
-                        "value": "[parameters('adminPassword')]"
-                    },
-            
-                    "imagePublisher": {
-                        "value": ""
-                    },
-                    "imageOffer": {
-                        "value": ""
-                    },
-                    "imageSKU": {
-                        "value": ""
-                    },
-                    
-                    "vstsAccount": {
-                        "value": "[parameters('vstsAccount')]"
-                    },
-                    "personalAccessToken": {
-                        "value": "[parameters('personalAccessToken')]"
-                    },
-                    "poolName": {
-                        "value": "[parameters('poolName')]"
-                    },
-                    
-                    "vnetName": {
-                        "value": "[variables('vnetName')]"
-                    },
-                    "vnetID": {
-                        "value": "[variables('vnetID')]"
-                    },
-                    "lbName": {
-                        "value": "[variables('lbName')]"
-                    },
-                    "lbID": {
-                        "value": "[variables('lbID')]"
-                    },  
-                    
-                    "_artifactsLocation": {
-                        "value": "[parameters('_artifactsLocation')]"
-                    },
-                    "_artifactsLocationSasToken": {
-                        "value": "[parameters('_artifactsLocationSasToken')]"
+                    "osDisk": {
+                        "createOption": "FromImage"
                     }
-            
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('nicName'),copyindex()))]"
+                        }
+                    ]
                 }
             }
-        }
-    ],
-    "outputs": {}
+        },
+        {
+            "apiVersion": "2015-05-01-preview",
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(variables('vmName'), copyindex(), '/BuildAgent')]",
+            "location": "[resourceGroup().location]",
+            "copy": {
+                "name": "extensionLoop",
+                "count": "[parameters('agentCount')]"
+            },
+            "dependsOn": [
+              "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'), copyindex())]"
+            ],
+            "properties": {
+              "publisher": "Microsoft.Compute",
+              "type": "CustomScriptExtension",
+              "typeHandlerVersion": "1.4",
+              "settings": {
+                "fileUris": "[variables('agentBaseConfig').scriptFiles]",
+                "commandToExecute": "[variables('agentBaseConfig').scriptCommand]"
+              }
+            }
+          }
+    ]
 }
