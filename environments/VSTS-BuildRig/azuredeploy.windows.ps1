@@ -1,7 +1,5 @@
-# Downloads the Visual Studio Team Services Build Agent and installs on the new machine
-# and registers with the Visual Studio Team Services account and build agent pool
+#Requires -Version 3.0
 
-# Enable option
 [CmdletBinding()]
 Param(
     [Parameter(Mandatory=$true)]$VSTSAccount,
@@ -10,7 +8,8 @@ Param(
     [Parameter(Mandatory=$false)]$AgentName = $($env:COMPUTERNAME)
 )
 
-Start-Transcript -Path ([System.IO.Path]::ChangeExtension($PSCommandPath, '.log')) -Force -ErrorAction SilentlyContinue
+try     { Start-Transcript -Path ([System.IO.Path]::ChangeExtension($PSCommandPath, '.log')) -Force -ErrorAction SilentlyContinue }
+catch   { }
 
 try {
 
@@ -92,5 +91,6 @@ try {
 }
 catch {
 
-    Stop-Transcript -ErrorAction SilentlyContinue
+    try     { Stop-Transcript -ErrorAction SilentlyContinue }
+    catch   { }
 }
