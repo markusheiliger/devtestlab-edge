@@ -10,7 +10,7 @@ Param(
     [Parameter(Mandatory=$false)]$AgentName = $($env:COMPUTERNAME)
 )
 
-Start-Transcript -Path [System.IO.Path]::ChangeExtension($PSCommandPath, '.ps1', '.log') -Force -ErrorAction SilentlyContinue
+Start-Transcript -Path ([System.IO.Path]::ChangeExtension($PSCommandPath, '.log')) -Force -ErrorAction SilentlyContinue
 
 try {
 
@@ -18,7 +18,7 @@ try {
     Write-Output "Current folder: $currentLocation"
 
     $agentTempFolderName = Join-Path $env:temp ([System.IO.Path]::GetRandomFileName())
-    New-Item -ItemType Directory -Force -Path $agentTempFolderName
+    New-Item -ItemType Directory -Force -Path $agentTempFolderName | Out-Null
     Write-Output "Temporary Agent download folder: $agentTempFolderName"
 
     $serverUrl = "https://$VSTSAccount.visualstudio.com"
@@ -41,7 +41,7 @@ try {
         catch {
 
             $exceptionText = ($_ | Out-String).Trim()
-            Write-Output "Exception occured downloading agent: $exceptionText in try number $retries"
+            Write-Warning "Exception occured downloading agent: $exceptionText in try number $retries"
             $retries++
             Start-Sleep -Seconds 30 
         }
@@ -52,10 +52,10 @@ try {
     $agentInstallationPath = Join-Path "C:" $AgentName 
 
     # Create the directory for this agent.
-    New-Item -ItemType Directory -Force -Path $agentInstallationPath 
+    New-Item -ItemType Directory -Force -Path $agentInstallationPath | Out-Null
 
     # Create a folder for the build work
-    New-Item -ItemType Directory -Force -Path (Join-Path $agentInstallationPath $WorkFolder)
+    New-Item -ItemType Directory -Force -Path (Join-Path $agentInstallationPath $WorkFolder) | Out-Null
 
     Write-Output "Extracting the zip file for the agent"
     $destShellFolder = (new-object -com shell.application).namespace("$agentInstallationPath")
@@ -64,7 +64,7 @@ try {
     # Removing the ZoneIdentifier from files downloaded from the internet so the plugins can be loaded
     # Don't recurse down _work or _diag, those files are not blocked and cause the process to take much longer
     Write-Output "Unblocking files"
-    Get-ChildItem -Recurse -Path $agentInstallationPath | Unblock-File | out-null
+    Get-ChildItem -Recurse -Path $agentInstallationPath | Unblock-File | Out-Null
 
     # Retrieve the path to the config.cmd file.
     $agentConfigPath = [System.IO.Path]::Combine($agentInstallationPath, 'config.cmd')
