@@ -84,7 +84,7 @@
                 "scriptFiles": [
                     "[concat(parameters('_artifactsLocation'), '/azuredeploy.windows.ps1', parameters('_artifactsLocationSasToken'))]"
                 ],
-                "scriptCommand": "[concat('powershell.exe -ExecutionPolicy Unrestricted -Command { $script = gci -Filter azuredeploy.windows.ps1 -Recurse | sort -Descending -Property LastWriteTime | select -First 1 -ExpandProperty FullName; . $script -vstsAccount ', parameters('vstsAccount'), ' -personalAccessToken ', parameters('vstsPAT'), ' -PoolName ', parameters('vstsPool'), ' }')]"
+                "scriptCommand": "[concat('powershell.exe -ExecutionPolicy Unrestricted -Command { $script = gci -Filter \"azuredeploy.windows.ps1\" -Recurse | sort -Descending -Property LastWriteTime | select -First 1 -ExpandProperty FullName; . $script -vstsAccount ', parameters('vstsAccount'), ' -personalAccessToken ', parameters('vstsPAT'), ' -PoolName ', parameters('vstsPool'), ' }')]"
             }
         }
     },
