@@ -89,7 +89,7 @@ try {
 
     Write-Output "Agent install output: $LASTEXITCODE"
 }
-catch {
+finally {
 
     try     { Stop-Transcript -ErrorAction SilentlyContinue }
     catch   { }
