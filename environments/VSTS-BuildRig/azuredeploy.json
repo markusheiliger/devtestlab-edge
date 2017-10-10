@@ -224,6 +224,9 @@
             "type": "Microsoft.Compute/virtualMachines",
             "name": "[concat(variables('vmName'), copyindex())]",
             "location": "[resourceGroup().location]",
+            "tags": {
+                "_artifactsLocation": "[parameters('_artifactsLocation')]"
+            },
             "copy": {
                 "name": "virtualMachineLoop",
                 "count": "[parameters('agentCount')]"
