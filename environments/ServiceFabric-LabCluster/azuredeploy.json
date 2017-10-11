@@ -49,8 +49,8 @@
     },
     "variables": {
         "quickstartRepoRoot": "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/",
-        "clusterName": "[toLower(resourceGroup().name)]",
-        "vaultName": "[toLower(concat('v', uniqueString(variables('clusterName'))))]",
+        "clusterName": "[toLower(uniqueString(resourceGroup().name))]",
+        "vaultName": "[variables('clusterName')]",
         "vaultSecret": "ClusterCertificate",
         "loadBalancedAppPort1": 80,
         "loadBalancedAppPort2": 443,
