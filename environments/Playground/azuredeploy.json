@@ -4,6 +4,7 @@
     "parameters": {
         "contributorUserIds": {
             "type": "array",
+            "defaultValue": [],
             "metadata": {
                 "description": "Your user object ID."
             }
@@ -14,6 +15,7 @@
     },
     "resources": [
         {
+            "condition": "[greater(length(parameters('contributorUserIds')), 0)]",
             "name": "[parameters('contributorUserIds')[copyIndex()]]",
             "type": "Microsoft.Authorization/roleAssignments",
             "apiVersion": "2017-05-01",
