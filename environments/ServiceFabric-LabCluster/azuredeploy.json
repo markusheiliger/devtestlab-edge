@@ -88,7 +88,7 @@
         },
         {
             "condition": "[equals(parameters('clusterOS'), 'Windows')]",
-            "name": "QuickstartTemplateWindows",
+            "name": "[concat(deployment().name, '-QuickstartTemplate-Windows')]",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2015-01-01",
             "dependsOn": [
@@ -148,7 +148,7 @@
         },
         {
             "condition": "[equals(parameters('clusterOS'), 'Linux')]",
-            "name": "QuickstartTemplateLinux",
+            "name": "[concat(deployment().name, '-QuickstartTemplate-Linux')]",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2015-01-01",
             "dependsOn": [
