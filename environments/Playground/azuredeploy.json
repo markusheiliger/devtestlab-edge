@@ -16,6 +16,7 @@
     },
     "resources": [
         {
+            "condition": "[greater(length(trim(parameters('contributorUserIds'))), 0)]",
             "name": "[trim(variables('contributorUserIds')[copyIndex()])]",
             "type": "Microsoft.Authorization/roleAssignments",
             "apiVersion": "2017-05-01",
