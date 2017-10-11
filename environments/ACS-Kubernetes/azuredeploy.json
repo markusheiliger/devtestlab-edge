@@ -93,7 +93,6 @@
             }
         },
         {
-            "condition": false,
             "name": "[concat(deployment().name, '-QuickstartTemplate')]",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2017-05-01",
