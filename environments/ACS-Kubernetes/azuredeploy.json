@@ -93,7 +93,7 @@
             }
         },
         {
-            "condition": "[parameters('createRegistry')]",
+            "condition": false,
             "name": "[concat(deployment().name, '-Registry')]",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2017-05-01",
