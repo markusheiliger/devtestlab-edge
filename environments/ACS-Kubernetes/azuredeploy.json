@@ -93,6 +93,25 @@
             }
         },
         {
+            "condition": "[parameters('createRegistry')]",
+            "name": "[concat(deployment().name, '-Registry')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Authorization/roleAssignments', variables('roleAssignments_Contributor'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(parameters('_artifactsLocation'), '/azuredeploy.registry.json', parameters('_artifactsLocationSasToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                }
+            }
+        },
+        {
+            "condition": false,
             "name": "[concat(deployment().name, '-QuickstartTemplate')]",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2017-05-01",
@@ -134,24 +153,6 @@
                     "servicePrincipalClientSecret": {
                         "value": "[parameters('servicePrincipalClientSecret')]"
                     }
-                }
-            }
-        },
-        {
-            "condition": "[parameters('createRegistry')]",
-            "name": "[concat(deployment().name, '-Registry')]",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2017-05-01",
-            "dependsOn": [
-                "[resourceId('Microsoft.Authorization/roleAssignments', variables('roleAssignments_Contributor'))]"
-            ],
-            "properties": {
-                "mode": "Incremental",
-                "templateLink": {
-                    "uri": "[concat(parameters('_artifactsLocation'), '/azuredeploy.registry.json', parameters('_artifactsLocationSasToken'))]",
-                    "contentVersion": "1.0.0.0"
-                },
-                "parameters": {
                 }
             }
         }
