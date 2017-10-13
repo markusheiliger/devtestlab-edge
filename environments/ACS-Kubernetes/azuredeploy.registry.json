@@ -6,7 +6,7 @@
   },
   "variables": {
     "registryName": "[concat(uniqueString(resourceGroup().id), 'registry')]",
-    "storageName":  "[concat(uniqueString(resourceGroup().id), 'storage' )]"
+    "storageName":  "[concat(uniqueString(resourceGroup().id), 'registry' )]"
   },
   "resources": [
     {
