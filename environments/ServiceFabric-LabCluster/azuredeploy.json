@@ -45,16 +45,32 @@
             "metadata": {
                 "description": "Certificate thumbprint for identification in the local certificate store."
             }
+        },
+        "appPort1": {
+            "type": "int",
+            "defaultValue": 80,
+            "minValue": 1,
+            "metadata": {
+                "description": "Public accessible application port #1."
+            }
+        },
+        "appPort2": {
+            "type": "int",
+            "defaultValue": 443,
+            "minValue": 1,
+            "metadata": {
+                "description": "Public accessible application port #2."
+            }
         }
     },
     "variables": {
         "quickstartRepoRoot": "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/",
-        "clusterName": "[toLower(uniqueString(resourceGroup().name))]",
-        "vaultName": "[variables('clusterName')]",
+        "clusterName": "[concat('sf-', toLower(uniqueString(resourceGroup().name)))]",
+        "vaultName": "[concat('kv-', toLower(uniqueString(resourceGroup().name)))]",
         "vaultSecret": "ClusterCertificate",
-        "loadBalancedAppPort1": 80,
-        "loadBalancedAppPort2": 443,
-        "nt0InstanceCount": 5
+        "loadBalancedAppPort1": "[parameters('appPort1')]",
+        "loadBalancedAppPort2": "[parameters('appPort2')]",
+        "nt0InstanceCount": 
     },
     "resources": [
         {
