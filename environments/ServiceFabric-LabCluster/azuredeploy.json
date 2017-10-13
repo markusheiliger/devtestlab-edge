@@ -70,7 +70,7 @@
         "vaultSecret": "ClusterCertificate",
         "loadBalancedAppPort1": "[parameters('appPort1')]",
         "loadBalancedAppPort2": "[parameters('appPort2')]",
-        "nt0InstanceCount": 
+        "nt0InstanceCount": 5
     },
     "resources": [
         {
