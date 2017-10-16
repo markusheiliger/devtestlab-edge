@@ -1,0 +1,168 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "adminUsername": {
+            "type": "string",
+            "minLength": 1,
+            "metadata": {
+                "description": "Database administrator login name"
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "minLength": 8,
+            "metadata": {
+                "description": "Database administrator password"
+            }
+        },
+        "servicePlanTier": {
+            "type": "string",
+            "allowedValues": [
+                "Basic",
+                "Standard"
+            ],
+            "defaultValue": "Basic",
+            "metadata": {
+                "description": "Tier for Service Plan"
+            }
+        },
+        "servicePlanSku": {
+            "type": "string",
+            "allowedValues": [
+                "B1",
+                "B2",
+                "B3",
+                "S1",
+                "S2",
+                "S3"
+            ],
+            "defaultValue": "B1",
+            "metadata": {
+                "description": "Size for Service Plan"
+            }
+        },
+        "databaseType": {
+            "type": "string",
+            "defaultValue": "MySQL",
+            "allowedValues": [
+                "MySQL",
+                "PostgreSQL"
+            ],
+            "metadata": {
+                "description": "Database to use for the SonarQube installation."
+            }
+        },
+        "databaseDTU": {
+            "type": "int",
+            "allowedValues": [
+                50,
+                100
+            ],
+            "defaultValue": 50,
+            "metadata": {
+                "description": "Azure database pricing tier : 50 DTU , 100 DTU"
+            }
+        }
+    },
+    "variables": {
+        "quickstartRepoRoot": "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/",
+        "databaseVersion": "[if(equals(toUpper(parameters('databaseType')), 'MYSQL'), '5.7', '9.6')]",
+        "databaseSkuName": "[concat(parameters('databaseType'), 'B', parameters('databaseDTU'))]",
+        "databaseSkuSizeMB": "[mul(parameters('databaseDTU'), 1024)]",
+        "databaseSkuTier": "Basic"
+    },
+    "resources": [
+        {
+            "condition": "[equals(toUpper(parameters('databaseType')), 'MYSQL')]",
+            "name": "[concat(deployment().name, '-QuickstartTemplate')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('quickstartRepoRoot'), '/101-webapp-linux-sonarqube-mysql/azuredeploy.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "siteName": {
+                        "value": "[toLower(resourceGroup().name)]"
+                    },
+                    "servicePlanTier": {
+                        "value": "[parameters('servicePlanTier')]"
+                    },
+                    "servicePlanSku": {
+                        "value": "[parameters('servicePlanSku')]"
+                    },
+                    "administratorLogin": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "administratorLoginPassword": {
+                        "value": "[parameters('adminPassword')]"
+                    },
+                    "databaseDTU": {
+                        "value": "[parameters('databaseDTU')]"
+                    },
+                    "databaseSkuName": {
+                        "value": "[variables('databaseSkuName')]"
+                    },
+                    "databaseSkuSizeMB": {
+                        "value": "[variables('databaseSkuSizeMB')]"
+                    },
+                    "databaseSkuTier": {
+                        "value": "[variables('databaseSkuTier')]"
+                    },
+                    "mysqlVersion": {
+                        "value": "[variables('databaseVersion')]"
+                    }
+                }
+            }
+        },
+        {
+            "condition": "[equals(toUpper(parameters('databaseType')), 'POSTGRESQL')]",
+            "name": "[concat(deployment().name, '-QuickstartTemplate')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('quickstartRepoRoot'), '/101-webapp-linux-sonarqube-postgresql/azuredeploy.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "siteName": {
+                        "value": "[toLower(resourceGroup().name)]"
+                    },
+                    "servicePlanTier": {
+                        "value": "[parameters('servicePlanTier')]"
+                    },
+                    "servicePlanSku": {
+                        "value": "[parameters('servicePlanSku')]"
+                    },
+                    "administratorLogin": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "administratorLoginPassword": {
+                        "value": "[parameters('adminPassword')]"
+                    },
+                    "databaseDTU": {
+                        "value": "[parameters('databaseDTU')]"
+                    },
+                    "databaseSkuName": {
+                        "value": "[variables('databaseSkuName')]"
+                    },
+                    "databaseSkuSizeMB": {
+                        "value": "[variables('databaseSkuSizeMB')]"
+                    },
+                    "databaseSkuTier": {
+                        "value": "[variables('databaseSkuTier')]"
+                    },
+                    "postgresqlVersion": {
+                        "value": "[variables('databaseVersion')]"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}
