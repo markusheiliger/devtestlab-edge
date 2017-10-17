@@ -109,7 +109,7 @@
         },
         {
             "condition": "[equals(toUpper(parameters('databaseType')), 'POSTGRESQL')]",
-            "name": "[concat(deployment().name, '-QuickstartTemplate-PostgreSQL')]",
+            "name": "[concat(deployment().name, '-QuickstartTemplate-PgSQL')]",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2017-05-01",
             "properties": {
