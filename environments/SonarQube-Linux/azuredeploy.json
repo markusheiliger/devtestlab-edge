@@ -70,12 +70,13 @@
         "databaseVersion": "[if(equals(toUpper(parameters('databaseType')), 'MYSQL'), '5.7', '9.6')]",
         "databaseSkuName": "[concat(parameters('databaseType'), 'B', parameters('databaseDTU'))]",
         "databaseSkuSizeMB": "[mul(parameters('databaseDTU'), 1024)]",
-        "databaseSkuTier": "Basic"
+        "databaseSkuTier": "Basic",
+        "siteName": "[toLower(concat('sq', uniqueString(resourceGroup().id)))]"
     },
     "resources": [
         {
             "condition": "[equals(toUpper(parameters('databaseType')), 'MYSQL')]",
-            "name": "[concat(deployment().name, '-QuickstartTemplate')]",
+            "name": "[concat(deployment().name, '-QuickstartTemplate-MySQL')]",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2017-05-01",
             "properties": {
@@ -86,7 +87,7 @@
                 },
                 "parameters": {
                     "siteName": {
-                        "value": "[toLower(resourceGroup().name)]"
+                        "value": "[variables('siteName')]"
                     },
                     "servicePlanTier": {
                         "value": "[parameters('servicePlanTier')]"
@@ -120,7 +121,7 @@
         },
         {
             "condition": "[equals(toUpper(parameters('databaseType')), 'POSTGRESQL')]",
-            "name": "[concat(deployment().name, '-QuickstartTemplate')]",
+            "name": "[concat(deployment().name, '-QuickstartTemplate-PostgreSQL')]",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2017-05-01",
             "properties": {
@@ -131,7 +132,7 @@
                 },
                 "parameters": {
                     "siteName": {
-                        "value": "[toLower(resourceGroup().name)]"
+                        "value": "[variables('siteName')]"
                     },
                     "servicePlanTier": {
                         "value": "[parameters('servicePlanTier')]"
