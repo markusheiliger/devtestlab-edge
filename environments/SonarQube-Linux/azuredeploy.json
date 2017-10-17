@@ -123,10 +123,10 @@
                         "value": "[variables('siteName')]"
                     },
                     "servicePlanTier": {
-                        "value": "[parameters('servicePlanTier')]"
+                        "value": "[variables('servicePlanTier')]"
                     },
                     "servicePlanSku": {
-                        "value": "[parameters('servicePlanSku')]"
+                        "value": "[variables('servicePlanSku')]"
                     },
                     "administratorLogin": {
                         "value": "[parameters('adminUsername')]"
