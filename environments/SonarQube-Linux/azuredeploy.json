@@ -44,7 +44,7 @@
         },
         "databaseType": {
             "type": "string",
-            "defaultValue": "MySQL",
+            "defaultValue": "MYSQL",
             "allowedValues": [
                 "MYSQL",
                 "PostgreSQL"
