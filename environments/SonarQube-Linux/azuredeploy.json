@@ -30,14 +30,11 @@
         "servicePlanSku": {
             "type": "string",
             "allowedValues": [
-                "B1",
-                "B2",
-                "B3",
                 "S1",
                 "S2",
                 "S3"
             ],
-            "defaultValue": "B1",
+            "defaultValue": "S2",
             "metadata": {
                 "description": "Size for Service Plan"
             }
