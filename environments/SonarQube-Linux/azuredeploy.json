@@ -16,18 +16,7 @@
                 "description": "Database administrator password"
             }
         },
-        "servicePlanTier": {
-            "type": "string",
-            "allowedValues": [
-                "Basic",
-                "Standard"
-            ],
-            "defaultValue": "Basic",
-            "metadata": {
-                "description": "Tier for Service Plan"
-            }
-        },
-        "servicePlanSku": {
+        "servicePlan": {
             "type": "string",
             "allowedValues": [
                 "S1",
@@ -36,7 +25,7 @@
             ],
             "defaultValue": "S2",
             "metadata": {
-                "description": "Size for Service Plan"
+                "description": "Tier and size of the Service Plan"
             }
         },
         "databaseType": {
@@ -68,7 +57,9 @@
         "databaseSkuName": "[concat(parameters('databaseType'), 'B', parameters('databaseDTU'))]",
         "databaseSkuSizeMB": "[mul(parameters('databaseDTU'), 1024)]",
         "databaseSkuTier": "Basic",
-        "siteName": "[toLower(concat('sq', uniqueString(resourceGroup().id)))]"
+        "siteName": "[toLower(concat('sq', uniqueString(resourceGroup().id)))]",
+        "servicePlanTier": "Standard",
+        "servicePlanSku": "[parameters('servicePlan')]"
     },
     "resources": [
         {
@@ -87,10 +78,10 @@
                         "value": "[variables('siteName')]"
                     },
                     "servicePlanTier": {
-                        "value": "[parameters('servicePlanTier')]"
+                        "value": "[variables('servicePlanTier')]"
                     },
                     "servicePlanSku": {
-                        "value": "[parameters('servicePlanSku')]"
+                        "value": "[variables('servicePlanSku')]"
                     },
                     "administratorLogin": {
                         "value": "[parameters('adminUsername')]"
