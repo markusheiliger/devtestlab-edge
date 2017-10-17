@@ -1,5 +1,5 @@
 {
   "itemDisplayName": "SonarQube (Linux)",
-  "description": "...",
+  "description": "SonarQube (formerly known as Sonar) is an open source tool suite to measure and analyse to quality of source code. It is written in Java but is able to analyse code in about 20 different programming languages.",
   "summary": "..."
 }
