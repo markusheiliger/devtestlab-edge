@@ -46,7 +46,7 @@
             "type": "string",
             "defaultValue": "MySQL",
             "allowedValues": [
-                "MySQL",
+                "MYSQL",
                 "PostgreSQL"
             ],
             "metadata": {
@@ -67,8 +67,8 @@
     },
     "variables": {
         "quickstartRepoRoot": "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/",
-        "databaseVersion": "[if(equals(toUpper(parameters('databaseType')), 'MYSQL'), '5.7', '9.6')]",
-        "databaseSkuName": "[toUpper(concat(parameters('databaseType'), 'B', parameters('databaseDTU')))]",
+        "databaseVersion": "[if(equals(parameters('databaseType'), 'MYSQL'), '5.7', '9.6')]",
+        "databaseSkuName": "[concat(parameters('databaseType'), 'B', parameters('databaseDTU'))]",
         "databaseSkuSizeMB": "[mul(parameters('databaseDTU'), 1024)]",
         "databaseSkuTier": "Basic",
         "siteName": "[toLower(concat('sq', uniqueString(resourceGroup().id)))]"
