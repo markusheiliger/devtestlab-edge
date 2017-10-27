@@ -1,0 +1,54 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "labName": {
+        "type": "string"
+      },
+      "githubToken": {
+          "type": "securestring"
+      }
+    },
+    "variables": {
+        "labVirtualNetworkName": "[concat(parameters('labName'), '-VNet')]",
+        "artifactRepositoryName": "[concat('privaterepo', uniqueString(resourceGroup().id))]"
+    },
+    "resources": [
+      {
+        "apiVersion": "2017-04-26-preview",
+        "type": "Microsoft.DevTestLab/labs",
+        "name": "[parameters('labName')]",
+        "location": "[resourceGroup().location]",
+        "resources": [
+          {
+            "apiVersion": "2017-04-26-preview",
+            "name": "[variables('labVirtualNetworkName')]",
+            "type": "virtualNetworks",
+            "dependsOn": [
+              "[resourceId('Microsoft.DevTestLab/labs', parameters('labName'))]"
+            ]
+          },
+          {
+            "apiVersion": "2017-04-26-preview",
+            "name": "[variables('artifactRepositoryName')]",
+            "type": "artifactSources",
+            "dependsOn": [
+              "[resourceId('Microsoft.DevTestLab/labs', parameters('labName'))]"
+            ],
+            "properties": {
+                "securityToken": "[parameters('githubToken')]",
+                "displayName": "markusheiliger/devtestlab-edge",
+                "uri": "https://github.com/markusheiliger/devtestlab-edge.git",
+                "sourceType": "GitHub",
+                "folderPath": "/artifacts",
+                "armTemplateFolderPath": "/environments",
+                "branchRef": "",
+                "status": "Enabled"
+            }
+          }
+        ]
+      }
+    ],
+    "outputs": {
+    }
+  }
