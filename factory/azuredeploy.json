@@ -17,7 +17,7 @@
     },
     "variables": {
         "labName": "[if(equals(length(parameters('labName')), 0), resourceGroup().name, parameters('labName'))]",
-        "labVirtualNetworkName": "[concat(variables('labName'), '-VNet')]",
+        "labVirtualNetworkName": "[concat(variables('labName'), 'VNet')]",
         "artifactRepositoryName": "[concat('privaterepo', uniqueString(resourceGroup().id))]"
     },
     "resources": [
