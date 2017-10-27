@@ -1,0 +1,374 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "highAvailableFarm": {
+            "type": "bool",
+            "metadata": {
+                "description": "Decide if this will become a high available farm or not"
+            },
+            "defaultValue": false
+        },
+        "adminUsername": {
+            "type": "string",
+            "minLength": 1,
+            "metadata": {
+                "description": "The administrator login name"
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "minLength": 8,
+            "metadata": {
+                "description": "The administrator password"
+            }
+        },
+        "sqlServerServiceAccountUserName": {
+            "type": "string",
+            "metadata": {
+                "description": "The SQL Server Service account name"
+            },
+            "defaultValue": "sql_service"
+        },
+        "sqlServerServiceAccountPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The SQL Server Service account password"
+            }
+        },
+        "sharePointSetupUserAccountUserName": {
+            "type": "string",
+            "metadata": {
+                "description": "The Sharepoint Setup account name"
+            },
+            "defaultValue": "sp_setup"
+        },
+        "sharePointSetupUserAccountPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The Sharepoint Setup account password"
+            }
+        },
+        "sharePointFarmAccountUserName": {
+            "type": "string",
+            "metadata": {
+                "description": "The Sharepoint Farm account name"
+            },
+            "defaultValue": "sp_farm"
+        },
+        "sharePointFarmAccountPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The Sharepoint Farm account password"
+            }
+        },
+        "sharePointFarmPassphrasePassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The Sharepoint Farm Passphrase"
+            }
+        },
+        "adVMSize": {
+            "type": "string",
+            "metadata": {
+                "description": "The size of the AD VM Created"
+            },
+            "allowedValues": [
+                "Standard_DS1_v2",
+                "Standard_DS2_v2",
+                "Standard_DS3_v2",
+                "Standard_DS4_v2",
+                "Standard_DS5_v2",
+                "Standard_DS11_v2",
+                "Standard_DS12_v2",
+                "Standard_DS13_v2",
+                "Standard_DS14_v2",
+                "Standard_DS15_v2"
+            ],
+            "defaultValue": "Standard_DS2_v2"
+        },
+        "sqlVMSize": {
+            "type": "string",
+            "metadata": {
+                "description": "The size of the SQL VM Created"
+            },
+            "allowedValues": [
+                "Standard_DS1_v2",
+                "Standard_DS2_v2",
+                "Standard_DS3_v2",
+                "Standard_DS4_v2",
+                "Standard_DS5_v2",
+                "Standard_DS11_v2",
+                "Standard_DS12_v2",
+                "Standard_DS13_v2",
+                "Standard_DS14_v2",
+                "Standard_DS15_v2"
+            ],
+            "defaultValue": "Standard_DS2_v2"
+        },
+        "witnessVMSize": {
+            "type": "string",
+            "metadata": {
+                "description": "The size of the Witness VM Created"
+            },
+            "allowedValues": [
+                "Standard_DS1_v2",
+                "Standard_DS2_v2",
+                "Standard_DS3_v2",
+                "Standard_DS4_v2",
+                "Standard_DS5_v2",
+                "Standard_DS11_v2",
+                "Standard_DS12_v2",
+                "Standard_DS13_v2",
+                "Standard_DS14_v2",
+                "Standard_DS15_v2"
+            ],
+            "defaultValue": "Standard_DS1_v2"
+        },
+        "spVMSize": {
+            "type": "string",
+            "metadata": {
+                "description": "The size of the VM Created"
+            },
+            "allowedValues": [
+                "Standard_DS1_v2",
+                "Standard_DS2_v2",
+                "Standard_DS3_v2",
+                "Standard_DS4_v2",
+                "Standard_DS5_v2",
+                "Standard_DS11_v2",
+                "Standard_DS12_v2",
+                "Standard_DS13_v2",
+                "Standard_DS14_v2",
+                "Standard_DS15_v2"
+            ],
+            "defaultValue": "Standard_DS3_v2"
+        },
+        "_artifactsLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "The base URI where artifacts required by this template are located. When the template is deployed using the accompanying scripts, a private location in the subscription will be used and this value will be automatically generated."
+            },
+            "defaultValue": "https://raw.githubusercontent.com/markusheiliger/devtestlab-edge/master/environments/SP2013-Farm"
+        },
+        "_artifactsLocationSasToken": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The sasToken required to access _artifactsLocation.  When the template is deployed using the accompanying scripts, a sasToken will be automatically generated."
+            },
+            "defaultValue": ""
+        }
+    },
+    "variables": {
+        "resourcePrefix": "[take(uniqueString(resourceGroup().id), 5)]",
+        "storageAccountNamePrefix": "[variables('resourcePrefix')]",
+        "storageAccountType": "Premium_LRS",
+        "virtualNetworkAddressRange":"10.0.0.0/16",
+        "staticSubnet":"10.0.0.0/24",
+        "sqlSubnet":"10.0.1.0/24",
+        "spWebSubnet":"10.0.2.0/24",
+        "spAppSubnet":"10.0.3.0/24",
+        "adNicIPAddress": "[variables('adPDCNICIPAddress')]",
+        "adPDCNICIPAddress":"10.0.0.4",
+        "adBDCNICIPAddress":"10.0.0.5",
+        "sqlLBIPAddress":"10.0.0.6",
+        "dnsPrefix": "[toLower(resourceGroup().name)]",
+        "virtualNetworkName": "[concat(variables('resourcePrefix'), '-vnet')]",
+        "spWebIPAddressName": "[concat(variables('resourcePrefix'), '-ip')]"
+    },
+    "resources": [
+        {
+            "condition": "[parameters('highAvailableFarm')]",
+            "name": "[concat(deployment().name, '-FarmHA')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(parameters('_artifactsLocation'), '/azuredeploy.sp2013ha.json', parameters('_artifactsLocationSasToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[resourceGroup().location]"
+                    },
+                    "sharepointFarmName": {
+                        "value": "[resourceGroup().name]"
+                    },
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "adminPassword": {
+                        "value": "[parameters('adminPassword')]"
+                    },
+                    "adVMSize": {
+                        "value": "[parameters('adVMSize')]"
+                    },
+                    "sqlVMSize": {
+                        "value": "[parameters('sqlVMSize')]"
+                    },
+                    "witnessVMSize": {
+                        "value": "[parameters('witnessVMSize')]"
+                    },
+                    "spVMSize": {
+                        "value": "[parameters('spVMSize')]"
+                    },
+                    "spWebIPAddressName": {
+                        "value": "[variables('spWebIPAddressName')]"
+                    },
+                    "domainName": {
+                        "value": "[toLower(concat(resourceGroup().name, '.local'))]"
+                    },
+                    "sqlServerServiceAccountUserName": {
+                        "value": "[parameters('sqlServerServiceAccountUserName')]"
+                    },
+                    "sqlServerServiceAccountPassword": {
+                        "value": "[parameters('sqlServerServiceAccountPassword')]"
+                    },
+                    "sharePointSetupUserAccountUserName": {
+                        "value": "[parameters('sharePointSetupUserAccountUserName')]"
+                    },
+                    "sharePointSetupUserAccountPassword": {
+                        "value": "[parameters('sharePointSetupUserAccountPassword')]"
+                    },
+                    "sharePointFarmAccountUserName": {
+                        "value": "[parameters('sharePointFarmAccountUserName')]"
+                    },
+                    "sharePointFarmAccountPassword": {
+                        "value": "[parameters('sharePointFarmAccountPassword')]"
+                    },
+                    "sharePointFarmPassphrasePassword": {
+                        "value": "[parameters('sharePointFarmPassphrasePassword')]"
+                    },
+                    "spSiteTemplateName": {
+                        "value": "STS#0"
+                    },
+                    "storageAccountNamePrefix": {
+                        "value": "[variables('storageAccountNamePrefix')]"
+                    },
+                    "storageAccountType": {
+                        "value": "[variables('storageAccountType')]"
+                    },
+                    "virtualNetworkAddressRange": {
+                        "value": "[variables('virtualNetworkAddressRange')]"
+                    },
+                    "staticSubnet": {
+                        "value": "[variables('staticSubnet')]"
+                    },
+                    "sqlSubnet": {
+                        "value": "[variables('sqlSubnet')]"
+                    },
+                    "spWebSubnet": {
+                        "value": "[variables('spWebSubnet')]"
+                    },
+                    "spAppSubnet": {
+                        "value": "[variables('spAppSubnet')]"
+                    },
+                    "adPDCNICIPAddress": {
+                        "value": "[variables('adPDCNICIPAddress')]"
+                    },
+                    "adBDCNICIPAddress": {
+                        "value": "[variables('adBDCNICIPAddress')]"
+                    },
+                    "sqlLBIPAddress": {
+                        "value": "[variables('sqlLBIPAddress')]"
+                    },
+                    "dnsPrefix": {
+                        "value":"[variables('dnsPrefix')]"
+                    },
+                    "virtualNetworkName": {
+                        "value": "[variables('virtualNetworkName')]"
+                    }
+                }
+            }
+        },
+        {
+            "condition": "[not(parameters('highAvailableFarm'))]",
+            "name": "[concat(deployment().name, '-Farm')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(parameters('_artifactsLocation'), '/azuredeploy.sp2013.json', parameters('_artifactsLocationSasToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[resourceGroup().location]"
+                    },
+                    "sharepointFarmName": {
+                        "value": "[resourceGroup().name]"
+                    },
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "adminPassword": {
+                        "value": "[parameters('adminPassword')]"
+                    },
+                    "adVMSize": {
+                        "value": "[parameters('adVMSize')]"
+                    },
+                    "sqlVMSize": {
+                        "value": "[parameters('sqlVMSize')]"
+                    },
+                    "spVMSize": {
+                        "value": "[parameters('spVMSize')]"
+                    },
+                    "domainName": {
+                        "value": "[toLower(concat(resourceGroup().name, '.local'))]"
+                    },
+                    "sqlServerServiceAccountUserName": {
+                        "value": "[parameters('sqlServerServiceAccountUserName')]"
+                    },
+                    "sqlServerServiceAccountPassword": {
+                        "value": "[parameters('sqlServerServiceAccountPassword')]"
+                    },
+                    "sharePointSetupUserAccountUserName": {
+                        "value": "[parameters('sharePointSetupUserAccountUserName')]"
+                    },
+                    "sharePointSetupUserAccountPassword": {
+                        "value": "[parameters('sharePointSetupUserAccountPassword')]"
+                    },
+                    "sharePointFarmAccountUserName": {
+                        "value": "[parameters('sharePointFarmAccountUserName')]"
+                    },
+                    "sharePointFarmAccountPassword": {
+                        "value": "[parameters('sharePointFarmAccountPassword')]"
+                    },
+                    "sharePointFarmPassphrasePassword": {
+                        "value": "[parameters('sharePointFarmPassphrasePassword')]"
+                    },
+                    "spSiteTemplateName": {
+                        "value": "STS#0"
+                    },
+                    "spDNSPrefix": {
+                        "value": "[variables('dnsPrefix')]"
+                    },
+                    "storageAccountNamePrefix": {
+                        "value": "[variables('storageAccountNamePrefix')]"
+                    },
+                    "storageAccountType": {
+                        "value": "[variables('storageAccountType')]"
+                    },
+                    "virtualNetworkAddressRange": {
+                        "value": "[variables('virtualNetworkAddressRange')]"
+                    },
+                    "sqlSubnet": {
+                        "value": "[variables('sqlSubnet')]"
+                    },
+                    "sppublicIPAddressName":{
+                        "value": "[variables('spWebIPAddressName')]"
+                    },
+                    "adNicIPAddress": {
+                        "value": "[variables('adNicIPAddress')]"
+                    },
+                    "virtualNetworkName": {
+                        "value": "[variables('virtualNetworkName')]"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}
