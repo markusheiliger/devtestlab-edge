@@ -3,10 +3,17 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
       "labName": {
-        "type": "string"
+        "type": "string",
+        "defaultValue": "[resourceGroup().name]",
+        "metadata": {
+          "description":"The name of the lab (default: the name of the containing resource group)."
+        }
       },
       "githubToken": {
-          "type": "securestring"
+          "type": "securestring",        
+          "metadata": {
+            "description":"Your GitHub token to use for authenticating when accessing the artifacts and environment definitions."
+          }
       }
     },
     "variables": {
