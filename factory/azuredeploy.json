@@ -4,6 +4,7 @@
     "parameters": {
       "labName": {
         "type": "string",
+        "defaultValue": "[resourceGroup().name]",
         "metadata": {
           "description":"The name of the lab (default: the name of the containing resource group)."
         }
@@ -16,15 +17,14 @@
       }
     },
     "variables": {
-        "labName": "[if(equals(length(parameters('labName')), 0), resourceGroup().name, parameters('labName'))]",
-        "labVirtualNetworkName": "[concat(variables('labName'), 'VNet')]",
+        "labVirtualNetworkName": "[concat(parameters('labName'), 'VNet')]",
         "artifactRepositoryName": "[concat('privaterepo', uniqueString(resourceGroup().id))]"
     },
     "resources": [
       {
         "apiVersion": "2017-04-26-preview",
         "type": "Microsoft.DevTestLab/labs",
-        "name": "[variables('labName')]",
+        "name": "[parameters('labName')]",
         "location": "[resourceGroup().location]",
         "resources": [
           {
@@ -32,7 +32,7 @@
             "name": "[variables('labVirtualNetworkName')]",
             "type": "virtualNetworks",
             "dependsOn": [
-              "[resourceId('Microsoft.DevTestLab/labs', variables('labName'))]"
+              "[resourceId('Microsoft.DevTestLab/labs', parameters('labName'))]"
             ]
           },
           {
@@ -40,7 +40,7 @@
             "name": "[variables('artifactRepositoryName')]",
             "type": "artifactSources",
             "dependsOn": [
-              "[resourceId('Microsoft.DevTestLab/labs', variables('labName'))]"
+              "[resourceId('Microsoft.DevTestLab/labs', parameters('labName'))]"
             ],
             "properties": {
                 "securityToken": "[parameters('githubToken')]",
