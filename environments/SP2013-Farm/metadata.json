@@ -1,5 +1,5 @@
 {
-  "itemDisplayName": "SonarQube (Linux)",
-  "description": "SonarQube (formerly known as Sonar) is an open source tool suite to measure and analyse to quality of source code. It is written in Java but is able to analyse code in about 20 different programming languages.",
+  "itemDisplayName": "SharePoint 2013 Farm",
+  "description": "You can now easily deploy a two or three-tier SharePoint Server 2013 farm in Azure. This is designed to help you quickly create an Internet-facing SharePoint farm for dev/test, demonstration, or proof-of-concept purposes.",
   "summary": "..."
 }
