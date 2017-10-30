@@ -1,0 +1,249 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "clusterOS": {
+            "type": "string",
+            "allowedValues": [
+                "Windows",
+                "Linux"
+            ],
+            "defaultValue": "Windows",
+            "metadata": {
+                "description": "Select the cluster OS."
+            }
+        },
+        "clusterHA": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Select if the cluster should be setup in high availalbe mode."
+            }
+        },
+        "adminUsername": {
+            "type": "string",
+            "minLength": 1,
+            "metadata": {
+                "description": "Administrator user name for the virtual machines."
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Administrator password for the virtual machines."
+            }
+        },
+        "sqlUsername": {
+            "type": "string",
+            "defaultValue": "hpcsql",
+            "metadata": {
+                "description": "Sql user name."
+            }
+        },
+        "sqlPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Sql password."
+            }
+        },
+        "certificate": {
+            "type": "string",
+            "minLength": 1,
+            "metadata": {
+                "description": "Certificate as Base64 encoded string."
+            }
+        },
+        "certificatePassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Certificate password for installation."
+            }
+        },
+        "certificateThumbprint": {
+            "type": "string",
+            "minLength": 1,
+            "metadata": {
+                "description": "Certificate thumbprint for identification in the local certificate store."
+            }
+        },
+        "headNodeVMSize": {
+            "type": "string",
+            "allowedValues": [
+                "Standard_DS1_v2",
+                "Standard_DS2_v2",
+                "Standard_DS3_v2",
+                "Standard_DS4_v2",
+                "Standard_DS5_v2",
+                "Standard_DS11_v2",
+                "Standard_DS12_v2",
+                "Standard_DS13_v2",
+                "Standard_DS14_v2",
+                "Standard_DS15_v2"
+            ],
+            "defaultValue": "Standard_DS4_v2",
+            "metadata": {
+                "description": "The VM size for the head node."
+            }
+        },
+        "computeNodeVMSize": {
+            "type": "string",
+            "allowedValues": [
+                "Standard_DS1_v2",
+                "Standard_DS2_v2",
+                "Standard_DS3_v2",
+                "Standard_DS4_v2",
+                "Standard_DS5_v2",
+                "Standard_DS11_v2",
+                "Standard_DS12_v2",
+                "Standard_DS13_v2",
+                "Standard_DS14_v2",
+                "Standard_DS15_v2"
+            ],
+            "defaultValue": "Standard_DS3_v2",
+            "metadata": {
+                "description": "The VM size for the compute nodes."
+            }
+        },
+        "sqlServerVMSize": {
+            "type": "string",
+            "allowedValues": [
+                "Standard_DS1_v2",
+                "Standard_DS2_v2",
+                "Standard_DS3_v2",
+                "Standard_DS4_v2",
+                "Standard_DS5_v2",
+                "Standard_DS11_v2",
+                "Standard_DS12_v2",
+                "Standard_DS13_v2",
+                "Standard_DS14_v2",
+                "Standard_DS15_v2"
+            ],
+            "defaultValue": "Standard_DS4_v2",
+            "metadata": {
+                "description": "The VM size for the SQL Server VM."
+            }
+        }
+    },
+    "variables": {
+        "githubRepoRoot": "https://raw.githubusercontent.com/MsHpcPack/HPCPack2016/master/",
+        "clusterName": "[concat('sf-', toLower(uniqueString(resourceGroup().name)))]",
+        "vaultName": "[concat('kv-', toLower(uniqueString(resourceGroup().name)))]",
+        "vaultSecret": "ClusterCertificate"
+    },
+    "resources": [
+        {
+            "name": "[variables('vaultName')]",
+            "type": "Microsoft.KeyVault/vaults",
+            "apiVersion": "2015-06-01",
+            "location": "[resourceGroup().location]",
+            "tags": {},
+            "properties": {
+                "enabledForDeployment": true,
+                "enabledForTemplateDeployment": false,
+                "enabledForVolumeEncryption": false,
+                "tenantId": "[subscription().tenantId]",
+                "sku": {
+                    "name": "standard",
+                    "family": "A"
+                },
+                "accessPolicies": []
+            }
+        },
+        {
+            "name": "[concat(variables('vaultName'), '/', variables('vaultSecret'))]",
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2015-06-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('vaultName'))]"
+            ],
+            "properties": {
+                "value": "[base64(concat('{ \"data\":\"', parameters('certificate'), '\", \"dataType\":\"pfx\", \"password\":\"', parameters('certificatePassword'), '\" }'))]"
+            }
+        },
+        {
+            "condition": "[and(equals(parameters('clusterOS'), 'Windows'), parameters('clusterHA'))]",
+            "name": "[concat(deployment().name, '-WindowsHA')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('vaultName'), variables('vaultSecret'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('githubRepoRoot'), 'newcluster-templates/three-hns-wincn-noad.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "clusterName": {
+                        "value": ""
+                    },
+                    "sqlServerVMName": {
+                        "value": ""
+                    },
+                    "sqlServerDiskType": {
+                        "value": ""
+                    },
+                    "sqlServerVMSize": {
+                        "value": ""
+                    },
+                    "headNodeList": {
+                        "value": ""
+                    },
+                    "headNodeOS": {
+                        "value": ""
+                    },
+                    "headNodeDiskType": {
+                        "value": ""
+                    },
+                    "headNodeVMSize": {
+                        "value": ""
+                    },
+                    "computeNodeNamePrefix": {
+                        "value": ""
+                    },
+                    "computeNodeNumber": {
+                        "value": ""
+                    },
+                    "computeNodeOS": {
+                        "value": ""
+                    },
+                    "computeNodeDiskType": {
+                        "value": ""
+                    },
+                    "computeNodeVMSize": {
+                        "value": ""
+                    },
+                    "adminUsername": {
+                        "value": ""
+                    },
+                    "adminPassword": {
+                        "value": ""
+                    },
+                    "sqlLoginName": {
+                        "value": ""
+                    },
+                    "sqlLoginPassword": {
+                        "value": ""
+                    },
+                    "hpcPackVersion": {
+                        "value": ""
+                    },
+                    "vaultName": {
+                        "value": ""
+                    },
+                    "vaultResourceGroup": {
+                        "value": ""
+                    },
+                    "certificateUrl": {
+                        "value": ""
+                    },
+                    "certThumbprint": {
+                        "value": ""
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}
