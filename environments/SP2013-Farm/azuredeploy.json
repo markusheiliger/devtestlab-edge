@@ -172,7 +172,8 @@
         "adPDCNICIPAddress":"10.0.0.4",
         "adBDCNICIPAddress":"10.0.0.5",
         "sqlLBIPAddress":"10.0.0.6",
-        "dnsPrefix": "[toLower(resourceGroup().name)]",
+        "dnsPrefix": "[toLower(concat('sp', uniqueString(resourceGroup().name)))]",
+        "domainName": "[concat(variables('dnsPrefix'), '.local')]",
         "virtualNetworkName": "[concat(variables('resourcePrefix'), '-vnet')]",
         "spWebIPAddressName": "[concat(variables('resourcePrefix'), '-ip')]"
     },
@@ -217,7 +218,7 @@
                         "value": "[variables('spWebIPAddressName')]"
                     },
                     "domainName": {
-                        "value": "[toLower(concat(resourceGroup().name, '.local'))]"
+                        "value": "[variables('domainName')]"
                     },
                     "sqlServerServiceAccountUserName": {
                         "value": "[parameters('sqlServerServiceAccountUserName')]"
@@ -316,7 +317,7 @@
                         "value": "[parameters('spVMSize')]"
                     },
                     "domainName": {
-                        "value": "[toLower(concat(resourceGroup().name, '.local'))]"
+                        "value": "[variables('domainName')]"
                     },
                     "sqlServerServiceAccountUserName": {
                         "value": "[parameters('sqlServerServiceAccountUserName')]"
