@@ -9,11 +9,46 @@
           "description":"The name of the lab (default: the name of the containing resource group)."
         }
       },
+      "githubName": {
+        "type": "string",
+        "defaultValue": "markusheiliger/devtestlab-edge",
+        "metadata": {
+          "description":"The name of the GitHub repository to access."
+        }
+      },      
+      "githubUri": {
+        "type": "string",
+        "defaultValue": "https://github.com/markusheiliger/devtestlab-edge.git",
+        "metadata": {
+          "description":"The URI of the GitHub repository to access."
+        }
+      },      
+      "githubBranch": {
+        "type": "string",
+        "defaultValue": "master",
+        "metadata": {
+          "description":"The branch of the GitHub repository to access."
+        }
+      },
       "githubToken": {
           "type": "securestring",        
           "metadata": {
             "description":"Your GitHub token to use for authenticating when accessing the artifacts and environment definitions."
           }
+      },
+      "githubArtifactsPath": {
+        "type": "string",
+        "defaultValue": "/artifacts",
+        "metadata": {
+          "description":"The path to the artifacts folder inside the repository."
+        }
+      },
+      "githubEnvironmentsPath": {
+        "type": "string",
+        "defaultValue": "/environments",
+        "metadata": {
+          "description":"The path to the environments folder inside the repository."
+        }
       }
     },
     "variables": {
@@ -44,12 +79,12 @@
             ],
             "properties": {
                 "securityToken": "[parameters('githubToken')]",
-                "displayName": "markusheiliger/devtestlab-edge",
-                "uri": "https://github.com/markusheiliger/devtestlab-edge.git",
+                "displayName": "[parameters('githubName')]",
+                "uri": "[parameters('githubUri')]",
                 "sourceType": "GitHub",
-                "folderPath": "/artifacts",
-                "armTemplateFolderPath": "/environments",
-                "branchRef": "",
+                "folderPath": "[parameters('githubArtifactsPath')]",
+                "armTemplateFolderPath": "[parameters('githubEnvironmentsPath')]",
+                "branchRef": "[parameters('githubBranch')]",
                 "status": "Enabled"
             }
           }
