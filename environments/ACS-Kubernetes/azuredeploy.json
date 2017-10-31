@@ -75,7 +75,7 @@
     },
     "variables": {
         "quickstartRepoRoot": "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/",
-        "dnsNamePrefix": "[toLower(resourceGroup().name)]",
+        "dnsNamePrefix": "[toLower(concat('k8s-', uniqueString(resourceGroup().id)))]",
         "agentVMSize": "Standard_D2_v2",
         "orchestratorType": "Kubernetes",
         "roleDefinition_Contributor": "[resourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
