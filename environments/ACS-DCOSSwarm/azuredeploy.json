@@ -68,7 +68,7 @@
     },
     "variables": {
         "quickstartRepoRoot": "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/",
-        "dnsNamePrefix": "[toLower(resourceGroup().name)]",
+        "dnsNamePrefix": "[toLower(concat(parameters('orchestratorType'), '-', uniqueString(resourceGroup().id)))]",
         "agentVMSize": "Standard_D2_v2",
         "orchestratorType": "[parameters('orchestratorType')]"
     },
