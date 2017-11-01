@@ -6,20 +6,10 @@
 
 You can now deploy a Microsoft HPC Pack 2016 cluster in Azure.
 
-Cluster variations provided by this template:
+## High-availability cluster for Windows or Linux workloads
 
-## High-availability cluster for Windows workloads
+This template deploys an HPC Pack cluster with high availability for Windows HPC workloads. The cluster includes three head nodes, one Database Server with SQL Server 2016 Standard version, and a configurable number of Windows or Linux compute nodes.
 
-This template deploys an HPC Pack cluster with high availability for Windows HPC workloads. The cluster includes three head nodes, one Database Server with SQL Server 2016 Standard version, and a configurable number of Windows compute nodes.
+## Single head node cluster for Windows or Linux workloads
 
-## High-availability cluster for Linux workloads
-
-This template deploys an HPC Pack cluster with high availability for Windows HPC workloads. The cluster includes three head nodes, one Database Server with SQL Server 2016 Standard version, and a configurable number of Linux compute nodes.
-
-## Single head node cluster for Windows workloads
-
-This template deploys an HPC Pack cluster with one single head node and a configurable number of Windows compute nodes. The head node is with local databases (SQL server 2016 Express version).
-
-## Single head node cluster for Linux workloads
-
-This template deploys an HPC Pack cluster with one single head node and a configurable number of Linux compute nodes. The head node is with local databases (SQL server 2016 Express version).
+This template deploys an HPC Pack cluster with one single head node and a configurable number of Windows or Linux compute nodes. The head node is with local databases (SQL server 2016 Express version).
