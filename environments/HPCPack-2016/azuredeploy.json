@@ -188,7 +188,7 @@
             }
         },
         {
-            "condition": "[parameters('clusterHA')]",
+            "condition": "[equals(variables('clusterType'), 'Windows')]",
             "name": "[concat(deployment().name, '-ClusterHA')]",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2015-01-01",
@@ -198,7 +198,7 @@
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
-                    "uri": "[concat(variables('githubRepoRoot'), 'newcluster-templates/', if(equals(variables('clusterType'), 'Windows'), 'three-hns-wincn-noad', 'three-hns-lnxcn'),'.json')]",
+                    "uri": "[concat(variables('githubRepoRoot'), 'newcluster-templates/', if(parameters('clusterHA'), 'three-hns-wincn-noad', 'single-hn-wincn-noad'),'.json')]",
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
@@ -257,7 +257,7 @@
             }
         },
         {
-            "condition": "[not(parameters('clusterHA'))]",
+            "condition": "[equals(variables('clusterType'), 'Linux')]",
             "name": "[concat(deployment().name, '-Cluster')]",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2015-01-01",
@@ -267,7 +267,7 @@
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
-                    "uri": "[concat(variables('githubRepoRoot'), 'newcluster-templates/', if(equals(variables('clusterType'), 'Windows'), 'single-hn-wincn-noad', 'single-hn-lnxcn'),'.json')]",
+                    "uri": "[concat(variables('githubRepoRoot'), 'newcluster-templates/', if(parameters('clusterHA'), 'three-hns-lnxcn', 'single-hn-lnxcn'),'.json')]",
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
@@ -286,7 +286,7 @@
                     "computeNodeNumber": {
                         "value": "[parameters('clusterSize')]"
                     },
-                    "computeNodeOS": {
+                    "computeNodeImage": {
                         "value": "[variables('clusterCNodeOS')]"
                     },
                     "computeNodeVMSize": {
