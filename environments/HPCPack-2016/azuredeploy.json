@@ -386,7 +386,7 @@
         },
         {
             "condition": "[and(not(parameters('clusterHA')), equals(variables('clusterType'), 'Linux'))]",
-            "name": "[concat(deployment().name, '-Cluster')]",
+            "name": "[concat(deployment().name, '-LinuxCluster')]",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2015-01-01",
             "dependsOn": [
