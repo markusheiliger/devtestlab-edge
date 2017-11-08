@@ -25,6 +25,7 @@ You can create a preconfigured lab hooked up with this repository with the "Depl
 * [SonarQube - Linux](https://github.com/markusheiliger/devtestlab-edge/blob/master/environments/SonarQube-Linux/README.md)
 * [SharePoint 2013 - Farm](https://github.com/markusheiliger/devtestlab-edge/blob/master/environments/SP2013-Farm/README.md)
 * [VSTS - BuildRig](https://github.com/markusheiliger/devtestlab-edge/blob/master/environments/VSTS-BuildRig/README.md)
+* [WebApp - Windows](https://github.com/markusheiliger/devtestlab-edge/blob/master/environments/WebApp-Windows/README.md)
 
 For a more "playground" like environment experience please use the following environment definition: 
 
