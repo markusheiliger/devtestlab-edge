@@ -1,0 +1,5 @@
+{
+  "itemDisplayName": "WebApp on Windows",
+  "description": "This template creates an Azure Web App w/o one of the following databases: Azure SQL, MySQL, PostgreSql",
+  "summary": "..."
+}
