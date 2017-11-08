@@ -1,0 +1,132 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "siteName": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().name]",
+            "metadata": {
+                "description": "Name of azure web app"
+            }
+        },
+        "databaseType": {
+            "type": "string",
+            "defaultValue": "none",
+            "allowedValues":[
+                "none",
+                "AzureSQL-12.0",
+                "MYSQL-5.6",
+                "MYSQL-5.7",
+                "PostgreSQL-9.5",
+                "PostgreSQL-9.6" 
+            ],         
+            "metadata": {
+                "description": "Database administrator login name"
+            }
+        },
+        "databaseAdministratorLogin": {
+            "type": "string",
+            "metadata": {
+                "description": "Database administrator login name"
+            }
+        },
+        "databaseAdministratorLoginPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Database administrator password"
+            }
+        },
+        "_artifactsLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "The base URI where artifacts required by this template are located. When the template is deployed using the accompanying scripts, a private location in the subscription will be used and this value will be automatically generated."
+            },
+            "defaultValue": "https://raw.githubusercontent.com/markusheiliger/devtestlab-edge/master/environments/WebApp-Windows"
+        },
+        "_artifactsLocationSasToken": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The sasToken required to access _artifactsLocation.  When the template is deployed using the accompanying scripts, a sasToken will be automatically generated."
+            },
+            "defaultValue": ""
+        }
+    },
+    "variables": {
+        "hostingPlanName": "[concat(parameters('siteName'), '-sp')]",
+        "serverName": "[concat(parameters('siteName'), '-db')]",
+        "databaseName": "[uniqueString(resourceGroup().id, parameters('siteName'))]",
+        
+        "databaseTokenSeperator": "-",
+        "databaseTokens": "[split(parameters('databaseType'), variables('databaseTokenSeperator'))]",
+        "databaseType": "[if(contains(parameters('databaseType'), variables('databaseTokenSeperator')), first(variables('databaseTokens')), parameters('databaseType'))]",
+        "databaseVersion": "[if(contains(parameters('databaseType'), variables('databaseTokenSeperator')), last(variables('databaseTokens')), '0.0')]"
+    },
+    "resources": [
+        {
+            "name": "[variables('hostingPlanName')]",
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2016-09-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "name": "[variables('hostingPlanName')]",
+                "workerSize": "1",
+                "hostingEnvironment": "",
+                "numberOfWorkers": 0
+            },
+            "sku": {
+                "Tier": "Standard",
+                "Name": "S1"
+            }
+        },
+        {
+            "name": "[parameters('siteName')]",
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2015-02-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Web/serverfarms/', variables('hostingPlanName'))]"
+            ],
+            "properties": {
+                "name": "[parameters('siteName')]",
+                "serverFarmId": "[variables('hostingPlanName')]",
+                "hostingEnvironment": ""
+            }
+        },
+        {
+            "condition": "[not(equals(variables('databaseType'), 'none'))]",
+            "name": "[concat(deployment().name, '-Database')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-01",
+            "dependsOn": [
+                "[concat('Microsoft.Web/sites/', parameters('siteName'))]"                
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(parameters('_artifactsLocation'), '/azuredeploy.', toLower(variables('databaseType')) , '.json', parameters('_artifactsLocationSasToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "siteName": {
+                        "value": "[parameters('siteName')]"
+                    },
+                    "serverName": {
+                        "value": "[variables('serverName')]"
+                    },
+                    "databaseName": {
+                        "value": "[variables('databaseName')]"
+                    },
+                    "databaseVersion": {
+                        "value": "[variables('databaseVersion')]"
+                    },
+                    "administratorLogin": {
+                        "value": "[parameters('databaseAdministratorLogin')]"
+                    },
+                    "administratorLoginPassword": {
+                        "value": "[parameters('databaseAdministratorLoginPassword')]"
+                    }
+                }
+            }
+        }
+    ]
+}

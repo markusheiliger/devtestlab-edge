@@ -1,0 +1,121 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "siteName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of web site."
+            }
+        },
+        "serverName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of database server."
+            }
+        },
+        "databaseName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of database."
+            }
+        },
+        "databaseVersion": {
+            "type": "string",
+            "allowedValues": [
+                "5.6",
+                "5.7"
+            ],
+            "defaultValue": "5.6",
+            "metadata": {
+                "description": "Database version"
+            }
+        },
+        "administratorLogin": {
+            "type": "string",
+            "minLength": 1,
+            "metadata": {
+                "description": "Database administrator login name"
+            }
+        },
+        "administratorLoginPassword": {
+            "type": "securestring",
+            "minLength": 8,
+            "maxLength": 128,
+            "metadata": {
+                "description": "Database administrator password"
+            }
+        }
+    },
+    "variables": {
+        "databaseDTU": 100,
+        "databaseSkuName": "MYSQLB100",
+        "databaseSkuSizeMB": 51200,
+        "databaseSkuTier": "Basic"
+    },
+    "resources": [
+        {
+            "name": "[concat(parameters('siteName'), '/connectionstrings')]",
+            "type": "Microsoft.Web/sites/config",
+            "apiVersion": "2015-04-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.DBforMySQL/servers', parameters('serverName'))]"
+            ],
+            "properties": {
+                "defaultConnection": {
+                    "value": "[concat('Database=', parameters('databaseName'), ';Data Source=', parameters('serverName'), '.mysql.database.azure.com;User Id=', parameters('administratorLogin'),'@', parameters('serverName'),';Password=', parameters('administratorLoginPassword'))]",
+                    "type": "MySQL"
+                }
+            }
+        },
+        {
+            "name": "[parameters('serverName')]",
+            "type": "Microsoft.DBforMySQL/servers",
+            "apiVersion": "2016-02-01-privatepreview",
+            "location": "[resourceGroup().location]",
+            "kind": "",
+            "properties": {
+                "version": "[parameters('databaseVersion')]",
+                "administratorLogin": "[parameters('administratorLogin')]",
+                "administratorLoginPassword": "[parameters('administratorLoginPassword')]",
+                "storageMB": "[variables('databaseSkuSizeMB')]"
+            },
+            "sku": {
+                "name": "[variables('databaseSkuName')]",
+                "tier": "[variables('databaseSkuTier')]",
+                "capacity": "[variables('databaseDTU')]",
+                "size": "[variables('databaseSkuSizeMB')]",
+                "family": "SkuFamily"
+            },
+            "resources": [
+                {
+                    "name": "[concat(parameters('serverName'),'-firewall')]",
+                    "type": "firewallrules",
+                    "apiVersion": "2016-02-01-privatepreview",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[concat('Microsoft.DBforMySQL/servers/', parameters('serverName'))]"
+                    ],
+                    "properties": {
+                        "startIpAddress": "0.0.0.0",
+                        "endIpAddress": "255.255.255.255"
+                    }
+                },
+                {
+                    "name": "[parameters('databaseName')]",
+                    "type": "databases",
+                    "apiVersion": "2016-02-01-privatepreview",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[concat('Microsoft.DBforMySQL/servers/', parameters('serverName'))]"
+                    ],
+                    "properties": {
+                        "charset": "utf8",
+                        "collation": "utf8_general_ci"
+                    }
+                }
+            ]
+        }
+    ]
+}
