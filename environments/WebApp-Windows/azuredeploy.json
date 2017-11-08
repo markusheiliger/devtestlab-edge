@@ -2,11 +2,11 @@
     "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "siteName": {
+        "resourceNamePrefix": {
             "type": "string",
-            "defaultValue": "[resourceGroup().name]",
+            "defaultValue": "waw",
             "metadata": {
-                "description": "Name of azure web app"
+                "description": "Prefix to use for resource names"
             }
         },
         "databaseType": {
@@ -52,9 +52,10 @@
         }
     },
     "variables": {
-        "hostingPlanName": "[concat(parameters('siteName'), '-sp')]",
-        "serverName": "[concat(parameters('siteName'), '-db')]",
-        "databaseName": "[uniqueString(resourceGroup().id, parameters('siteName'))]",
+        "hostingPlanName": "[toLower(concat(parameters('resourceNamePrefix'), '-', take(uniqueString(resourceGroup().id), 6), '-sp'))]",
+        "siteName": "[toLower(concat(parameters('resourceNamePrefix'), '-', take(uniqueString(resourceGroup().id), 6)))]",
+        "serverName": "[toLower(concat(parameters('resourceNamePrefix'), '-', take(uniqueString(resourceGroup().id), 6), '-db'))]",
+        "databaseName": "[uniqueString(resourceGroup().id, variables('siteName'))]",
         
         "databaseTokenSeperator": "-",
         "databaseTokens": "[split(parameters('databaseType'), variables('databaseTokenSeperator'))]",
@@ -79,7 +80,7 @@
             }
         },
         {
-            "name": "[parameters('siteName')]",
+            "name": "[variables('siteName')]",
             "type": "Microsoft.Web/sites",
             "apiVersion": "2015-02-01",
             "location": "[resourceGroup().location]",
@@ -87,7 +88,7 @@
                 "[concat('Microsoft.Web/serverfarms/', variables('hostingPlanName'))]"
             ],
             "properties": {
-                "name": "[parameters('siteName')]",
+                "name": "[variables('siteName')]",
                 "serverFarmId": "[variables('hostingPlanName')]",
                 "hostingEnvironment": ""
             }
@@ -98,7 +99,7 @@
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2017-05-01",
             "dependsOn": [
-                "[concat('Microsoft.Web/sites/', parameters('siteName'))]"                
+                "[concat('Microsoft.Web/sites/', variables('siteName'))]"                
             ],
             "properties": {
                 "mode": "Incremental",
@@ -108,7 +109,7 @@
                 },
                 "parameters": {
                     "siteName": {
-                        "value": "[parameters('siteName')]"
+                        "value": "[variables('siteName')]"
                     },
                     "serverName": {
                         "value": "[variables('serverName')]"
