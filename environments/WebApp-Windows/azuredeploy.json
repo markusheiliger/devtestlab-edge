@@ -55,7 +55,7 @@
         "hostingPlanName": "[toLower(concat(parameters('resourceNamePrefix'), '-', take(uniqueString(resourceGroup().id), 6), '-sp'))]",
         "siteName": "[toLower(concat(parameters('resourceNamePrefix'), '-', take(uniqueString(resourceGroup().id), 6)))]",
         "serverName": "[toLower(concat(parameters('resourceNamePrefix'), '-', take(uniqueString(resourceGroup().id), 6), '-db'))]",
-        "databaseName": "[uniqueString(resourceGroup().id, variables('siteName'))]",
+        "databaseName": "[concat('db', uniqueString(resourceGroup().id, variables('siteName')))]",
         
         "databaseTokenSeperator": "-",
         "databaseTokens": "[split(parameters('databaseType'), variables('databaseTokenSeperator'))]",
