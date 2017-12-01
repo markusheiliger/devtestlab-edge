@@ -1,10 +1,6 @@
-﻿# Azure DevTest Lab - EDGE 
+﻿# Azure DevTest Lab - EDGE <img src="https://mseng.visualstudio.com/_apis/public/build/definitions/7bfebc51-9907-4838-b87b-d6d0f62f72fa/5869/badge" style="display:block;align:right;"/>
 
 This repository contains DevTest Lab artifact and environment definitions in an **experimental** state.  
-
-* PROD <img src="https://mseng.visualstudio.com/_apis/public/build/definitions/7bfebc51-9907-4838-b87b-d6d0f62f72fa/5869/badge" style="display:block;"/>
-
-* DEV <img src="https://mseng.visualstudio.com/_apis/public/build/definitions/7bfebc51-9907-4838-b87b-d6d0f62f72fa/6005/badge" style="display:block;"/>
 
 You can create a preconfigured lab hooked up with this repository with the "Deploy to Azure" button below.
 
