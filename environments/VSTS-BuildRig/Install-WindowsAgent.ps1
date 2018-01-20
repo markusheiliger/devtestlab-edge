@@ -31,10 +31,15 @@ try {
         try {
 
             Write-Output "Trying to get download URL for latest VSTS agent release..."
-            $latestRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/Microsoft/vsts-agent/releases/latest"
-            $latestReleaseDownloadUrl = ($latestRelease.assets | ? { $_.name -like "*win7-x64*" }).browser_download_url
-            Invoke-WebRequest -Uri $latestReleaseDownloadUrl -Method Get -OutFile "$agentTempFolderName\agent.zip"
+            $latestRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/Microsoft/vsts-agent/releases/latest" | Select-Object -ExpandProperty body
+
+            if (-not ($latestRelease -match "https:\/\/vstsagentpackage.azureedge.net\/agent\/\d+.\d+.\d+\/vsts-agent-win-x64-\d+.\d+.\d+.zip")) {
+                throw "Could not find agent download link."
+            }
+
+            Invoke-WebRequest -Uri $Matches[0] -Method Get -OutFile "$agentTempFolderName\agent.zip"
             Write-Output "Downloaded agent successfully on attempt $retries"
+
             break
         }
         catch {
@@ -69,10 +74,8 @@ try {
     $agentConfigPath = [System.IO.Path]::Combine($agentInstallationPath, 'config.cmd')
     Write-Output "Agent Location = $agentConfigPath"
 
-    if (![System.IO.File]::Exists($agentConfigPath))
-    {
-        Write-Error "File not found: $agentConfigPath"
-        return
+    if (![System.IO.File]::Exists($agentConfigPath)) {
+        throw "File not found: $agentConfigPath"
     }
 
     # Call the agent with the configure command and all the options (this creates the settings file) without prompting
