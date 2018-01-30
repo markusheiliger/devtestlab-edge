@@ -152,7 +152,7 @@
         "clusterName": "[toLower(take(concat('hpc-', uniqueString(resourceGroup().name)),15))]",
         "clusterType": "[if(startsWith(parameters('clusterOS'), 'Windows'), 'Windows', 'Linux')]",
         "clusterHNodeOS": "[if(equals(variables('clusterType'), 'Windows'), parameters('clusterOS'), 'WindowsServer2016')]",
-        "clusterCNodeOS": "[parameters('clusterOS')]",
+        "clusterCNodeOS": "[if(equals(variables('clusterType'), 'Windows'), concat('ComputeNodeOn', parameters('clusterOS')), parameters('clusterOS'))]",
         "sqlName": "[toLower(take(concat('sql-', uniqueString(resourceGroup().name)),15))]",
         "vaultName": "[toLower(take(concat('kv-', uniqueString(resourceGroup().name)),15))]",
         "vaultSecret": "ClusterCertificate"
