@@ -224,7 +224,7 @@
                     "computeNodeNumber": {
                         "value": "[parameters('clusterSize')]"
                     },
-                    "computeNodeOS": {
+                    "computeNodeImage": {
                         "value": "[variables('clusterCNodeOS')]"
                     },
                     "computeNodeVMSize": {
@@ -357,7 +357,7 @@
                     "computeNodeNumber": {
                         "value": "[parameters('clusterSize')]"
                     },
-                    "computeNodeOS": {
+                    "computeNodeImage": {
                         "value": "[variables('clusterCNodeOS')]"
                     },
                     "computeNodeVMSize": {
