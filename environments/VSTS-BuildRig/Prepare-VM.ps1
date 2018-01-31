@@ -13,9 +13,9 @@ Push-Location $PSScriptRoot
 
 try {
 
-    . .\Install-WindowsAgent.ps1 -vstsAccount $VSTSAccount -personalAccessToken $PersonalAccessToken -PoolName $PoolName -AgentName $AgentName
-
     if ($ChocoPackages) { . .\Install-Chocolatey.ps1 -Packages $ChocoPackages }
+
+    . .\Install-WindowsAgent.ps1 -vstsAccount $VSTSAccount -personalAccessToken $PersonalAccessToken -PoolName $PoolName -AgentName $AgentName
 
 } finally {
 
