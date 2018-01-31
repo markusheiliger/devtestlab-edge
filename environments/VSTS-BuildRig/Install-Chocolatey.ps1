@@ -161,6 +161,9 @@ try
     Write-Host "Preparing to install Chocolatey packages: $Packages."
     Install-Packages -Packages $Packages
 
+    $inventory = $(choco list --local-only) -split "\r\n" | ?{ $_ }
+    $inventory[1..($inventory.count-2)] | %{ $tokens = "$_".Trim() -split " "; [System.Environment]::SetEnvironmentVariable($tokens[0], $tokens[1], [EnvironmentVariableTarget]::Machine ) }
+
     Write-Host "`nThe artifact was applied successfully.`n"
 }
 finally
