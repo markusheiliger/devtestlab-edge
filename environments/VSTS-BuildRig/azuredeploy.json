@@ -12,23 +12,45 @@
         "agentCount": {
             "type": "int",
             "defaultValue": 1,
-            "minValue": 1
+            "minValue": 1,
+            "maxValue": 10,
+            "metadata": {
+                "description": "..."
+            }
         },
         "agentSize": {
             "type": "string",
             "defaultValue": "Standard_D2_v3",
-            "minLength": 1
+            "minLength": 1,
+            "metadata": {
+                "description": "..."
+            }
         },
         "vstsAccount": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "metadata": {
+                "description": "..."
+            }
         },
         "vstsPool": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "metadata": {
+                "description": "..."
+            }
         },
         "vstsPAT": {
-            "type": "securestring"
+            "type": "securestring",
+            "metadata": {
+                "description": "..."
+            }
+        },
+        "chocoPackages": {
+            "type": "string",
+            "metadata": {
+                "description": "..."
+            }
         },
         "adminUsername": {
             "type": "string",
@@ -228,7 +250,7 @@
                 "_artifactsLocation": "[parameters('_artifactsLocation')]"
             },
             "copy": {
-                "name": "virtualMachineLoop",
+                "name": "vmLoop",
                 "count": "[parameters('agentCount')]"
             },
             "dependsOn": [
@@ -273,7 +295,7 @@
             "name": "[concat(variables('vmName'), copyindex(), '/BuildAgent')]",
             "location": "[resourceGroup().location]",
             "copy": {
-                "name": "extensionLoop",
+                "name": "agentLoop",
                 "count": "[parameters('agentCount')]"
             },
             "dependsOn": [
@@ -287,6 +309,31 @@
                 "settings": {
                     "fileUris": "[variables('agentBaseConfig').scriptFiles]",
                     "commandToExecute": "[variables('agentBaseConfig').scriptCommand]"
+                }
+            }
+        },
+        {
+            "condition": "[not(empty(parameters('chocoPackages')))]",
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(variables('vmName'), copyindex(), '/ChocoPackages')]",
+            "location": "[resourceGroup().location]",
+            "copy": {
+                "name": "chocoLoop",
+                "count": "[parameters('agentCount')]"
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'), copyindex())]",
+                "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'), copyindex(), '/extensions/BuildAgent')]"
+            ],
+            "properties": {
+                "publisher": "Microsoft.Compute",
+                "type": "CustomScriptExtension",
+                "typeHandlerVersion": "1.8",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "fileUris": "[concat(parameters('_artifactsLocation'), '/Install-Chocolatey.ps1', parameters('_artifactsLocationSasToken'))]",
+                    "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -Command \"& { $script = gci -Filter Install-Chocolatey.ps1 -Recurse | sort -Descending -Property LastWriteTime | select -First 1 -ExpandProperty FullName; . $script -Packages ''', parameters('chocoPackages'), ''' }\"')]"
                 }
             }
         }
