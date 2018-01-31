@@ -9,6 +9,15 @@ Param(
     [string] [Parameter(Mandatory=$false)]   $ChocoPackages = ""
 )
 
-.\Install-WindowsAgent.ps1 -vstsAccount $VSTSAccount -personalAccessToken $PersonalAccessToken -PoolName $PoolName -AgentName $AgentName
+Push-Location $PSScriptRoot
 
-if ($ChocoPackages) { .\Install-Chocolatey.ps1 -Packages $ChocoPackages }
+try {
+
+    . .\Install-WindowsAgent.ps1 -vstsAccount $VSTSAccount -personalAccessToken $PersonalAccessToken -PoolName $PoolName -AgentName $AgentName
+
+    if ($ChocoPackages) { . .\Install-Chocolatey.ps1 -Packages $ChocoPackages }
+
+} finally {
+
+    Pop-Location
+}

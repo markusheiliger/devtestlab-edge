@@ -13,7 +13,7 @@ catch   { }
 
 try {
 
-    $currentLocation = $PS
+    $currentLocation = $PSScriptRoot
     Write-Output "Current folder: $currentLocation"
 
     $agentTempFolderName = Join-Path $env:temp ([System.IO.Path]::GetRandomFileName())
