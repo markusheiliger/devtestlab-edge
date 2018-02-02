@@ -7,7 +7,8 @@
             "defaultValue": "Windows 2016 Datacenter (latest)",
             "allowedValues": [
                 "Windows 2016 Datacenter (latest)",
-                "Windows - VS2017 Enterprise (latest)"
+                "Windows - VS2017 Enterprise (latest)",
+                "Ubuntu 17.10 (latest)"
             ]
         },
         "agentCount": {
@@ -112,7 +113,7 @@
                 "version": "latest",
                 "scriptFiles": [
                     "[concat(parameters('_artifactsLocation'), '/Prepare-VM.ps1', parameters('_artifactsLocationSasToken'))]",
-                    "[concat(parameters('_artifactsLocation'), '/Install-WindowsAgent.ps1', parameters('_artifactsLocationSasToken'))]",
+                    "[concat(parameters('_artifactsLocation'), '/Install-BuildAgent.ps1', parameters('_artifactsLocationSasToken'))]",
                     "[concat(parameters('_artifactsLocation'), '/Install-Chocolatey.ps1', parameters('_artifactsLocationSasToken'))]"
                 ],
                 "scriptCommand": "[concat('powershell.exe -ExecutionPolicy Unrestricted -Command \"& { $script = gci -Filter Prepare-VM.ps1 -Recurse | sort -Descending -Property LastWriteTime | select -First 1 -ExpandProperty FullName; . $script -vstsAccount ', parameters('vstsAccount'), ' -personalAccessToken ', parameters('vstsPAT'), ' -PoolName ', parameters('vstsPool'), ' -ChocoPackages ''', parameters('chocoPackages'), ''' }\"')]"
@@ -124,10 +125,20 @@
                 "version": "latest",
                 "scriptFiles": [
                     "[concat(parameters('_artifactsLocation'), '/Prepare-VM.ps1', parameters('_artifactsLocationSasToken'))]",
-                    "[concat(parameters('_artifactsLocation'), '/Install-WindowsAgent.ps1', parameters('_artifactsLocationSasToken'))]",
+                    "[concat(parameters('_artifactsLocation'), '/Install-BuildAgent.ps1', parameters('_artifactsLocationSasToken'))]",
                     "[concat(parameters('_artifactsLocation'), '/Install-Chocolatey.ps1', parameters('_artifactsLocationSasToken'))]"
                 ],
                 "scriptCommand": "[concat('powershell.exe -ExecutionPolicy Unrestricted -Command \"& { $script = gci -Filter Prepare-VM.ps1 -Recurse | sort -Descending -Property LastWriteTime | select -First 1 -ExpandProperty FullName; . $script -vstsAccount ', parameters('vstsAccount'), ' -personalAccessToken ', parameters('vstsPAT'), ' -PoolName ', parameters('vstsPool'), ' -ChocoPackages ''', parameters('chocoPackages'), ''' }\"')]"
+            },            
+            "Ubuntu 17.10 (latest)": {
+                "publisher": "Canonical",
+                "offer": "UbuntuServer",
+                "sku": "16.04-LTS",
+                "version": "latest",
+                "scriptFiles": [
+                    "[concat(parameters('_artifactsLocation'), '/Prepare-VM.sh', parameters('_artifactsLocationSasToken'))]"
+                ],
+                "scriptCommand": "[concat('find -name \"Prepare-VM.sh\" -exec {} ',' https://',parameters('vstsAccount'),'.visualstudio.com ',parameters('vstsPAT'),' ',parameters('vstsPool'),' ',parameters('adminUsername'),' \\;')]"
             }
         }
     },
