@@ -36,10 +36,10 @@ trap
     $message = $Error[0].Exception.Message
     if ($message)
     {
-        Write-Host -Object "`nERROR: $message" -ForegroundColor Red
+        Write-Output -Object "`nERROR: $message" -ForegroundColor Red
     }
 
-    Write-Host "`nThe artifact failed to apply.`n"
+    Write-Output "`nThe artifact failed to apply.`n"
 
     # IMPORTANT NOTE: Throwing a terminating error (using $ErrorActionPreference = "Stop") still
     # returns exit code zero from the PowerShell script when using -File. The workaround is to
@@ -95,26 +95,27 @@ function Install-Packages
     $Packages.split(',; ', [StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object {
 
         $tokens = $_.Split('@', 2, [StringSplitOptions]::RemoveEmptyEntries)
-        if ($tokens.Length == 1) { $tokens += "feeds" }
+        if ($tokens.Length -eq 1) { $tokens += "feeds" }
 
-        $key = $tokens[0].ToLowerInvariant().Trim()
-        $val = $PackageTable[$key]
+        $key = $tokens[1].ToLowerInvariant().Trim()
 
-        if ($val) {
-            $val += $tokens[1].Trim()
+        if ($PackageTable.ContainsKey($key)) {
+            $PackageTable[$key] = $PackageTable[$key] + $tokens[0].Trim()
         } else {
-            $val = @($tokens[1].Trim())
+            $PackageTable[$key] = @($tokens[0].Trim())
         }
-        
-        $PackageTable[$key] = $val
     }
 
     $PackageTable.Keys | ForEach-Object {
 
-        $packages = $PackageTable[$_] -join ' '
-        $expression = "choco install -y -f --acceptlicense --allow-empty-checksums --no-progress --stoponfirstfailure $packages --source $_"
+        $key = $_
+        $pkg = $PackageTable[$key] -join ' '
+        $exp = "choco install -y -f --acceptlicense --allow-empty-checksums --no-progress --stoponfirstfailure $pkg --source $_"
 
-        Invoke-ExpressionImpl -Expression $expression 
+        if ($key -eq "webpi") { $exp += "  --params /SuppressReboot" }
+
+        Write-Output "EXECUTE: $exp"
+        Invoke-ExpressionImpl -Expression $exp 
     }
 
     #$Packages = $Packages.split(',; ', [StringSplitOptions]::RemoveEmptyEntries) -join ' '
@@ -172,21 +173,24 @@ function Validate-Params
 # Main execution block.
 #
 
+try     { Start-Transcript -Path ([System.IO.Path]::ChangeExtension($PSCommandPath, '.log')) -Force -ErrorAction SilentlyContinue }
+catch   { }
+
 try
 {
     pushd $PSScriptRoot
 
-    Write-Host 'Validating parameters.'
+    Write-Output 'Validating parameters.'
     Validate-Params
 
-    Write-Host 'Configuring PowerShell session.'
+    Write-Output 'Configuring PowerShell session.'
     Ensure-PowerShell -Version $PSVersionRequired
     Enable-PSRemoting -Force -SkipNetworkProfileCheck | Out-Null
 
-    Write-Host 'Ensuring latest Chocolatey version is installed.'
+    Write-Output 'Ensuring latest Chocolatey version is installed.'
     Ensure-Chocolatey
 
-    Write-Host "Preparing to install Chocolatey packages: $Packages."
+    Write-Output "Preparing to install Chocolatey packages: $Packages."
     Install-Packages -Packages $Packages
 
     $inventory = $(choco list --local-only) -split "\r\n" | Where-Object { $_ }
@@ -194,13 +198,16 @@ try
         
         $tokens = "$_".Trim() -split " "
         
-        Write-Host "Adding capability: $($tokens[0]) = $($tokens[1])"
+        Write-Output "Adding capability: $($tokens[0]) = $($tokens[1])"
         [System.Environment]::SetEnvironmentVariable($tokens[0], $tokens[1], [EnvironmentVariableTarget]::Machine ) 
     }
 
-    Write-Host "`nThe artifact was applied successfully.`n"
+    Write-Output "`nThe artifact was applied successfully.`n"
 }
 finally
 {
     popd
+    
+    try     { Stop-Transcript -ErrorAction SilentlyContinue }
+    catch   { }
 }
