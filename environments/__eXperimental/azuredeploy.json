@@ -1,0 +1,58 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/VM_IP.json",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "vmName": {
+        "type": "string"
+      },
+      "vmSize": {
+        "type": "string",
+        "defaultValue": "Standard_DS2_v2"
+      },
+      "adminUserName": {
+        "type": "string"
+      },
+      "adminPassword": {
+        "type": "securestring"
+      },
+      "networkInterfaceId": {
+        "type": "string"
+      }
+    },
+    "resources": [
+      {
+        "apiVersion": "2016-04-30-preview",
+        "properties": {
+          "hardwareProfile": {
+            "vmSize": "[parameters('vmSize')]"
+          },
+          "storageProfile": {
+            "osDisk": {
+              "osType": "Linux",
+              "name": "packer-osDisk.0657e90b-ec95-4dbe-b8ff-bfb193f572f0.vhd",
+              "createOption": "FromImage",
+              "image": {
+                "uri": "https://packerimagestore.blob.core.windows.net/system/Microsoft.Compute/Images/images/packer-osDisk.0657e90b-ec95-4dbe-b8ff-bfb193f572f0.vhd"
+              },
+              "caching": "ReadWrite"
+            }
+          },
+          "osProfile": {
+            "computerName": "[parameters('vmName')]",
+            "adminUsername": "[parameters('adminUsername')]",
+            "adminPassword": "[parameters('adminPassword')]"
+          },
+          "networkProfile": {"networkInterfaces":[{"id":"[parameters('networkInterfaceId')]"}]},
+          "diagnosticsProfile": {
+            "bootDiagnostics": {
+              "enabled": false
+            }
+          },
+          "provisioningState": 0
+        },
+        "type": "Microsoft.Compute/virtualMachines",
+        "location": "eastus2",
+        "name": "[parameters('vmName')]"
+      }
+    ]
+  }
