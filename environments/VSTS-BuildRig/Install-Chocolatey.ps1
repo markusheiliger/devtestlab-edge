@@ -90,38 +90,38 @@ function Install-Packages
         $Packages
     )
 
-    $PackageTable = @{}
+    # $PackageTable = @{}
 
-    $Packages.split(',; ', [StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object {
+    # $Packages.split(',; ', [StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object {
 
-        $tokens = $_.Split('@', 2, [StringSplitOptions]::RemoveEmptyEntries)
-        if ($tokens.Length -eq 1) { $tokens += "feeds" }
+    #     $tokens = $_.Split('@', 2, [StringSplitOptions]::RemoveEmptyEntries)
+    #     if ($tokens.Length -eq 1) { $tokens += "feeds" }
 
-        $key = $tokens[1].ToLowerInvariant().Trim()
+    #     $key = $tokens[1].ToLowerInvariant().Trim()
 
-        if ($PackageTable.ContainsKey($key)) {
-            $PackageTable[$key] = $PackageTable[$key] + $tokens[0].Trim()
-        } else {
-            $PackageTable[$key] = @($tokens[0].Trim())
-        }
-    }
+    #     if ($PackageTable.ContainsKey($key)) {
+    #         $PackageTable[$key] = $PackageTable[$key] + $tokens[0].Trim()
+    #     } else {
+    #         $PackageTable[$key] = @($tokens[0].Trim())
+    #     }
+    # }
 
-    $PackageTable.Keys | ForEach-Object {
+    # $PackageTable.Keys | ForEach-Object {
 
-        $key = $_
-        $pkg = $PackageTable[$key] -join ' '
-        $exp = "choco install -y -f --acceptlicense --allow-empty-checksums --no-progress --stoponfirstfailure $pkg --source $_"
+    #     $key = $_
+    #     $pkg = $PackageTable[$key] -join ' '
+    #     $exp = "choco install -y -f --acceptlicense --allow-empty-checksums --no-progress --stoponfirstfailure $pkg --source $_"
 
-        if ($key -eq "webpi") { $exp += "  --params /SuppressReboot" }
+    #     if ($key -eq "webpi") { $exp += "  --params /SuppressReboot" }
 
-        Write-Output "EXECUTE: $exp"
-        Invoke-ExpressionImpl -Expression $exp 
-    }
+    #     Write-Output "EXECUTE: $exp"
+    #     Invoke-ExpressionImpl -Expression $exp 
+    # }
 
-    #$Packages = $Packages.split(',; ', [StringSplitOptions]::RemoveEmptyEntries) -join ' '
-    #$expression = "choco install -y -f --acceptlicense --allow-empty-checksums --no-progress --stoponfirstfailure $Packages"
+    $Packages = $Packages.split(',; ', [StringSplitOptions]::RemoveEmptyEntries) -join ' '
+    $expression = "choco install -y -f --acceptlicense --allow-empty-checksums --no-progress --stoponfirstfailure $Packages"
 
-    #Invoke-ExpressionImpl -Expression $expression 
+    Invoke-ExpressionImpl -Expression $expression 
 }
 
 function Invoke-ExpressionImpl
