@@ -16,6 +16,7 @@ You can create a preconfigured lab hooked up with this repository with the "Depl
 
 * [ACS - DCOS/Swarm](https://github.com/markusheiliger/devtestlab-edge/blob/master/environments/ACS-DCOSSwarm/README.md)
 * [ACS - Kubernetes](https://github.com/markusheiliger/devtestlab-edge/blob/master/environments/ACS-Kubernetes/README.md)
+* [AKS - Kubernetes](https://github.com/markusheiliger/devtestlab-edge/blob/master/environments/AKS/README.md)
 * [HPCPack 2016](https://github.com/markusheiliger/devtestlab-edge/blob/master/environments/HPCPack-2016/README.md)
 * [ServiceFabric - LabCluster](https://github.com/markusheiliger/devtestlab-edge/blob/master/environments/ServiceFabric-LabCluster/README.md)
 * [SonarQube - Linux](https://github.com/markusheiliger/devtestlab-edge/blob/master/environments/SonarQube-Linux/README.md)
