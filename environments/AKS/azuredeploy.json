@@ -104,6 +104,7 @@
     },
     "resources": [
         {
+            "condition":false,
             "name": "[variables('roleAssignments_Contributor')]",
             "type": "Microsoft.Authorization/roleAssignments",
             "apiVersion": "2017-05-01",
