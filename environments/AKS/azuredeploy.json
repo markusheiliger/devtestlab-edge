@@ -2,17 +2,6 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "kubernetesVersion": {
-            "type": "string",
-            "defaultValue": "1.8.1",
-            "allowedValues": [
-                "1.7.7",
-                "1.8.1"
-            ],
-            "metadata": {
-                "description": "The version of the Kubernetes running in AKS."
-            }
-        },
         "adminUsername": {
             "type": "string",
             "minLength": 3,
@@ -23,13 +12,7 @@
         "adminPublicKey": {
             "type": "securestring",
             "metadata": {
-                "description": "Cluster node admin public key."
-            }
-        },
-        "servicePrincipalObjectId": {
-            "type": "securestring",
-            "metadata": {
-                "description": "Cluster service principal object ID."
+                "description": "Certificate public key used to authenticate with VMs through SSH. The certificate must be in PEM format with or without headers."
             }
         },
         "servicePrincipalClientId": {
@@ -44,9 +27,31 @@
                 "description": "Cluster service principal client Secret."
             }
         },
+        "kubernetesVersion": {
+            "type": "string",
+            "defaultValue": "1.8.1",
+            "allowedValues": [
+                "1.7.7",
+                "1.8.1"
+            ],
+            "metadata": {
+                "description": "The version of the Kubernetes running in AKS."
+            }
+        },
+        "osType":{
+            "type": "string",
+            "defaultValue": "Linux",
+            "allowedValues": [
+                "Linux",
+                "Windows"
+            ],
+            "metadata": {
+                "description": "OsType to be used to specify os type. Choose from Linux and Windows. Default to Linux."
+            }
+        },
         "createRegistry": {
             "type": "bool",
-            "defaultValue": false,
+            "defaultValue": "false",
             "metadata": {
                 "description": "Create a dedicated registry for the kubernetes cluster."
             }
@@ -76,7 +81,7 @@
               "Standard_A2"
             ],
             "metadata": {
-              "description": "The virutal machine size to use. We picked out the sizes with 2 vCPUs, but in real world projects you can choose other sizes as you desired."
+              "description": "The virutal machine size to use.."
             }
           },
         "_artifactsLocation": {
@@ -104,17 +109,6 @@
     },
     "resources": [
         {
-            "condition":false,
-            "name": "[variables('roleAssignments_Contributor')]",
-            "type": "Microsoft.Authorization/roleAssignments",
-            "apiVersion": "2017-05-01",
-            "properties": {
-                "roleDefinitionId": "[variables('roleDefinition_Contributor')]",
-                "principalId": "[parameters('servicePrincipalObjectId')]",
-                "scope": "[resourceGroup().id]"
-            }
-        },
-        {
             "condition": "[parameters('createRegistry')]",
             "name": "[concat(deployment().name, '-Registry')]",
             "type": "Microsoft.Resources/deployments",
@@ -141,10 +135,10 @@
                 "dnsPrefix": "[variables('dnsNamePrefix')]",
                 "agentPoolProfiles": [
                     {
-                        "name": "agentpool",
+                        "name": "[concat('agentpool-', toLower(parameters('osType')), '-', uniqueString(resourceGroup().id))]",
                         "count": "[parameters('agentCount')]",
                         "vmSize": "[parameters('agentSize')]",
-                        "osType": "Linux",
+                        "osType": "[parameters('osType')]",
                         "storageProfile": "ManagedDisks"
                     }
                 ],
