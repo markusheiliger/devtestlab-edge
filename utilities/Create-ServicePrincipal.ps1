@@ -18,7 +18,7 @@ Get-AzureRmADServicePrincipal -SearchString $ApplicationName | ForEach-Object {
     Remove-AzureRmADServicePrincipal -ObjectId $objectId -Force 
 }
 
-$principal = New-AzureRmADServicePrincipal -DisplayName $ApplicationName -Password $ApplicationSecret
+$principal = New-AzureRmADServicePrincipal -DisplayName $ApplicationName -Password (ConvertTo-SecureString $ApplicationSecret -AsPlainText -Force)
 $principalInfo = Join-Path $env:TEMP $($principal.DisplayName + ".txt")
 
 Remove-Item -Path $principalInfo -Force -ErrorAction SilentlyContinue | Out-Null

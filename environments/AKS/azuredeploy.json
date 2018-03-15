@@ -108,9 +108,6 @@
             "name": "[concat(deployment().name, '-Registry')]",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2017-05-01",
-            "dependsOn": [
-                "[resourceId('Microsoft.Authorization/roleAssignments', variables('roleAssignments_Contributor'))]"
-            ],
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
