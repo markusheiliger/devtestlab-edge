@@ -1,4 +1,5 @@
 {
+  "githubUsername": "MarkusHeiliger",
   "itemDisplayName": "SharePoint 2013 Farm",
   "description": "You can now easily deploy a two or three-tier SharePoint Server 2013 farm in Azure. This is designed to help you quickly create an Internet-facing SharePoint farm for dev/test, demonstration, or proof-of-concept purposes.",
   "summary": "..."
