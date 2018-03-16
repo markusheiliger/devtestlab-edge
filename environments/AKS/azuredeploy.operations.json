@@ -11,6 +11,9 @@
     "adminPublicKey": {
       "type": "securestring"
     },
+    "servicePrincipalObjectId": {
+      "type": "securestring"
+    },
     "servicePrincipalClientId": {
       "type": "string"
     },
@@ -42,18 +45,18 @@
     "nicName": "[concat(variables('vmName'), '-nic')]",
     "vNetAddressPrefixes": "10.0.0.0/8",
     "sNetAddressPrefixes": "10.250.0.0/16",
-    "roleDefinitionIdReader": "[concat('/subscriptions/',subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'acdd72a7-3385-48ef-bd42-f606fba81ae7')]"
+    "roleDefinition_Reader": "[concat('/subscriptions/',subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'acdd72a7-3385-48ef-bd42-f606fba81ae7')]",
+    "roleAssignment_Reader": "[guid(variables('roleDefinition_Reader'), parameters('servicePrincipalObjectId'))]"
   },
   "resources": [
     {
-      "type": "Microsoft.Authorization/roleAssignments",
+      "name": "[variables('roleAssignment_Reader')]",
+      "type": "Microsoft.ContainerService/managedClusters/providers/roleAssignments",
       "apiVersion": "2015-07-01",
-      "name": "[parameters('servicePrincipalClientId')]",
-      "properties":
-      {
-          "roleDefinitionId": "[variables('roleDefinitionIdReader')]",
-          "principalId": "[parameters('servicePrincipalClientId')]",
-          "scope": "[resourceId(subscription().subscriptionId, resourceGroup().name, 'Microsoft.ContainerService/managedClusters', parameters('clusterName'))]"
+      "properties": {
+        "roleDefinitionId": "[variables('roleDefinitionIdReader')]",
+        "principalId": "[parameters('servicePrincipalObjectId')]",
+        "scope": "[resourceId(subscription().subscriptionId, resourceGroup().name, 'Microsoft.ContainerService/managedClusters', parameters('clusterName'))]"
       }
     },
     {

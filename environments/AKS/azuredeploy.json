@@ -15,6 +15,12 @@
                 "description": "Certificate public key used to authenticate with VMs through SSH. The certificate must be in PEM format with or without headers."
             }
         },
+        "servicePrincipalObjectId": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Cluster service principal object ID."
+            }
+        },
         "servicePrincipalClientId": {
             "type": "string",
             "metadata": {
@@ -182,6 +188,9 @@
                     },
                     "adminPublicKey": {
                         "value": "[parameters('adminPublicKey')]"
+                    },
+                    "servicePrincipalObjectId": {
+                        "value": "[parameters('servicePrincipalObjectId')]"
                     },
                     "servicePrincipalClientId": {
                         "value": "[parameters('servicePrincipalClientId')]"
