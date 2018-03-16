@@ -54,7 +54,7 @@
       "type": "Microsoft.ContainerService/managedClusters/providers/roleAssignments",
       "apiVersion": "2015-07-01",
       "properties": {
-        "roleDefinitionId": "[variables('roleDefinitionIdReader')]",
+        "roleDefinitionId": "[variables('roleDefinition_Reader')]",
         "principalId": "[parameters('servicePrincipalObjectId')]",
         "scope": "[resourceId(subscription().subscriptionId, resourceGroup().name, 'Microsoft.ContainerService/managedClusters', parameters('clusterName'))]"
       }
