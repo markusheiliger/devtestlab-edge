@@ -16,7 +16,7 @@
             }
         },
         "servicePrincipalObjectId": {
-            "type": "securestring",
+            "type": "string",
             "metadata": {
                 "description": "Cluster service principal object ID."
             }

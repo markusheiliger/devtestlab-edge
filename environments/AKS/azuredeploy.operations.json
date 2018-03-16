@@ -12,7 +12,7 @@
       "type": "securestring"
     },
     "servicePrincipalObjectId": {
-      "type": "securestring"
+      "type": "string"
     },
     "servicePrincipalClientId": {
       "type": "string"
@@ -50,7 +50,7 @@
   },
   "resources": [
     {
-      "name": "[variables('roleAssignment_Reader')]",
+      "name": "[concat(parameters('clusterName'), '/Microsoft.Authorization/', variables('roleAssignment_Reader')]",
       "type": "Microsoft.ContainerService/managedClusters/providers/roleAssignments",
       "apiVersion": "2015-07-01",
       "properties": {
