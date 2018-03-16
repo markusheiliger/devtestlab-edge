@@ -101,7 +101,7 @@
     },
     "variables": {
         "dnsNamePrefix": "[toLower(concat('k8s-', uniqueString(resourceGroup().id)))]",
-        "agentPoolName": "[toLower(substring(concat(substring(parameters('osType'), 0, 3), '-', uniqueString(resourceGroup().id)), 0, 12))]"
+        "agentPoolName": "[toLower(substring(concat(substring(parameters('osType'), 0, 3), uniqueString(resourceGroup().id)), 0, 12))]"
     },
     "resources": [
         {
