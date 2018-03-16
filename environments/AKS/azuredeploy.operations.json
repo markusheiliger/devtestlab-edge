@@ -144,7 +144,7 @@
                 "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
               },
               "subnet": {
-                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName')),'/subnets/Operations')]"
+                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName')),'/subnets/aks-operations')]"
               }
             }
           }
@@ -218,7 +218,7 @@
             "autoUpgradeMinorVersion": true,
             "settings": {
               "fileUris": [
-                "[concat(variables('_artifactsLocation'), '/azuredeploy.operations.sh', variables('_artifactsLocationSasToken'))]"
+                "[concat(parameters('_artifactsLocation'), '/azuredeploy.operations.sh', parameters('_artifactsLocationSasToken'))]"
               ]
             },
             "protectedSettings": {
