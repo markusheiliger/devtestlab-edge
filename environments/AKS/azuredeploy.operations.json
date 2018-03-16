@@ -46,12 +46,14 @@
   },
   "resources": [
     {
-      "type": "Microsoft.ContainerService/managedClusters/providers/roleAssignments",
-      "apiVersion": "2017-05-01",
-      "name": "[concat(parameters('clusterName'), '/Microsoft.Authorization/', parameters('servicePrincipalClientId'))]",
-      "properties": {
-        "roleDefinitionId": "[variables('roleDefinitionIdReader')]",
-        "principalId": "[parameters('servicePrincipalClientId')]"
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2015-07-01",
+      "name": "[parameters('servicePrincipalClientId')]",
+      "properties":
+      {
+          "roleDefinitionId": "[variables('roleDefinitionIdReader')]",
+          "principalId": "[parameters('servicePrincipalClientId')]",
+          "scope": "[resourceId(subscription().subscriptionId, resourceGroup().name, 'Microsoft.ContainerService/managedClusters', parameters('clusterName'))]"
       }
     },
     {
