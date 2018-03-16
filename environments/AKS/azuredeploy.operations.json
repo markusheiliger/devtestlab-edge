@@ -48,7 +48,7 @@
     {
       "type": "Microsoft.ContainerService/managedClusters/providers/roleAssignments",
       "apiVersion": "2017-05-01",
-      "name": "[concat(variables('clusterName'), '/Microsoft.Authorization/', parameters('servicePrincipalClientId'))]",
+      "name": "[concat(parameters('clusterName'), '/Microsoft.Authorization/', parameters('servicePrincipalClientId'))]",
       "properties": {
         "roleDefinitionId": "[variables('roleDefinitionIdReader')]",
         "principalId": "[parameters('servicePrincipalClientId')]"
