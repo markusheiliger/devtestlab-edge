@@ -100,7 +100,8 @@
         }
     },
     "variables": {
-        "dnsNamePrefix": "[toLower(concat('k8s-', uniqueString(resourceGroup().id)))]"
+        "dnsNamePrefix": "[toLower(concat('k8s-', uniqueString(resourceGroup().id)))]",
+        "agentPoolName": "[toLower(substring(concat(substring(parameters('osType'), 0, 3), '-', uniqueString(resourceGroup().id)), 0, 12))]"
     },
     "resources": [
         {
@@ -127,7 +128,7 @@
                 "dnsPrefix": "[variables('dnsNamePrefix')]",
                 "agentPoolProfiles": [
                     {
-                        "name": "[concat('agentpool-', toLower(parameters('osType')), '-', uniqueString(resourceGroup().id))]",
+                        "name": "[variables('agentPoolName')]",
                         "count": "[parameters('agentCount')]",
                         "vmSize": "[parameters('agentSize')]",
                         "osType": "[parameters('osType')]",
