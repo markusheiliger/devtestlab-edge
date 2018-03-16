@@ -38,7 +38,7 @@
                 "description": "The version of the Kubernetes running in AKS."
             }
         },
-        "osType":{
+        "osType": {
             "type": "string",
             "defaultValue": "Linux",
             "allowedValues": [
@@ -56,6 +56,13 @@
                 "description": "Create a dedicated registry for the kubernetes cluster."
             }
         },
+        "createOpsVM": {
+            "type": "bool",
+            "defaultValue": "false",
+            "metadata": {
+                "description": "Create a operations VM with preloaded k8s tools."
+            }
+        },
         "agentCount": {
             "type": "int",
             "defaultValue": 3,
@@ -69,21 +76,21 @@
             "type": "string",
             "defaultValue": "Standard_DS2_v2",
             "allowedValues": [
-              "Standard_B2s",
-              "Standard_B2ms",
-              "Standard_D2s_v3",
-              "Standard_D2_v3",
-              "Standard_DS2_v2",
-              "Standard_D2_v2",
-              "Standard_DS2",
-              "Standard_D2",
-              "Standard_A2_v2",
-              "Standard_A2"
+                "Standard_B2s",
+                "Standard_B2ms",
+                "Standard_D2s_v3",
+                "Standard_D2_v3",
+                "Standard_DS2_v2",
+                "Standard_D2_v2",
+                "Standard_DS2",
+                "Standard_D2",
+                "Standard_A2_v2",
+                "Standard_A2"
             ],
             "metadata": {
-              "description": "The virutal machine size to use.."
+                "description": "The virutal machine size to use.."
             }
-          },
+        },
         "_artifactsLocation": {
             "type": "string",
             "metadata": {
@@ -116,6 +123,36 @@
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {}
+            }
+        },
+        {
+            "condition": "[parameters('createOpsVM')]",
+            "name": "[concat(deployment().name, '-Operations')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(parameters('_artifactsLocation'), '/azuredeploy.operations.json', parameters('_artifactsLocationSasToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "adminPublicKey": {
+                        "value": "[parameters('adminPublicKey')]"
+                    },
+                    "resourcePrefix": {
+                        "value": "[variables('dnsNamePrefix')]"
+                    },
+                    "_artifactsLocation": {
+                        "value": "[parameters('_artifactsLocation')]"
+                    },
+                    "_artifactsLocationSasToken": {
+                        "value": "[parameters('_artifactsLocationSasToken')]"
+                    }
+                }
             }
         },
         {
