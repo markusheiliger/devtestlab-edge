@@ -196,7 +196,32 @@
             }
           ]
         }
-      }
+      },
+      "resources": [
+        {
+          "type": "extensions",
+          "name": "Initialize",
+          "apiVersion": "2015-06-15",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.0",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": [
+                "[concat(variables('_artifactsLocation'), '/azuredeploy.operations.sh', variables('_artifactsLocationSasToken'))]"
+              ]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('echo foo')]"
+            }
+          }
+        }
+      ]
     }
   ],
   "outputs": {}
