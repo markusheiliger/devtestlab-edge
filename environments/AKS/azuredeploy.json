@@ -16,7 +16,7 @@
             }
         },
         "servicePrincipalClientId": {
-            "type": "securestring",
+            "type": "string",
             "metadata": {
                 "description": "Cluster service principal client ID."
             }
@@ -112,50 +112,6 @@
     },
     "resources": [
         {
-            "condition": "[parameters('createRegistry')]",
-            "name": "[concat(deployment().name, '-Registry')]",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2017-05-01",
-            "properties": {
-                "mode": "Incremental",
-                "templateLink": {
-                    "uri": "[concat(parameters('_artifactsLocation'), '/azuredeploy.registry.json', parameters('_artifactsLocationSasToken'))]",
-                    "contentVersion": "1.0.0.0"
-                },
-                "parameters": {}
-            }
-        },
-        {
-            "condition": "[parameters('createOpsVM')]",
-            "name": "[concat(deployment().name, '-Operations')]",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2017-05-01",
-            "properties": {
-                "mode": "Incremental",
-                "templateLink": {
-                    "uri": "[concat(parameters('_artifactsLocation'), '/azuredeploy.operations.json', parameters('_artifactsLocationSasToken'))]",
-                    "contentVersion": "1.0.0.0"
-                },
-                "parameters": {
-                    "adminUsername": {
-                        "value": "[parameters('adminUsername')]"
-                    },
-                    "adminPublicKey": {
-                        "value": "[parameters('adminPublicKey')]"
-                    },
-                    "resourcePrefix": {
-                        "value": "[variables('dnsNamePrefix')]"
-                    },
-                    "_artifactsLocation": {
-                        "value": "[parameters('_artifactsLocation')]"
-                    },
-                    "_artifactsLocationSasToken": {
-                        "value": "[parameters('_artifactsLocationSasToken')]"
-                    }
-                }
-            }
-        },
-        {
             "apiVersion": "2017-08-31",
             "type": "Microsoft.ContainerService/managedClusters",
             "location": "[resourceGroup().location]",
@@ -186,6 +142,59 @@
                 "servicePrincipalProfile": {
                     "ClientId": "[parameters('servicePrincipalClientId')]",
                     "Secret": "[parameters('servicePrincipalClientSecret')]"
+                }
+            }
+        },
+        {
+            "condition": "[parameters('createRegistry')]",
+            "name": "[concat(deployment().name, '-Registry')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(parameters('_artifactsLocation'), '/azuredeploy.registry.json', parameters('_artifactsLocationSasToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {}
+            }
+        },
+        {
+            "condition": "[parameters('createOpsVM')]",
+            "name": "[concat(deployment().name, '-Operations')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-01",
+            "dependsOn": [
+                "[concat('Microsoft.ContainerService/managedClusters/', variables('dnsNamePrefix'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(parameters('_artifactsLocation'), '/azuredeploy.operations.json', parameters('_artifactsLocationSasToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "clusterName": {
+                        "value": "[variables('dnsNamePrefix')]"
+                    },
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "adminPublicKey": {
+                        "value": "[parameters('adminPublicKey')]"
+                    },
+                    "servicePrincipalClientId": {
+                        "value": "[parameters('servicePrincipalClientId')]"
+                    },
+                    "servicePrincipalClientSecret": {
+                        "value": "[parameters('servicePrincipalClientSecret')]"
+                    },
+                    "_artifactsLocation": {
+                        "value": "[parameters('_artifactsLocation')]"
+                    },
+                    "_artifactsLocationSasToken": {
+                        "value": "[parameters('_artifactsLocationSasToken')]"
+                    }
                 }
             }
         }
