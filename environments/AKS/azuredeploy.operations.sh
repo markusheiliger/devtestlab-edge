@@ -30,7 +30,7 @@ echo "Ensuring user home for $6 ..." >> $LOG
 sudo mkhomedir_helper $6
 
 echo "Getting credentials for KubeCtl ..." >> $LOG
-sudo az aks get-credentials --resource-group $5 --name $4 --file /home/$6/.kube/config >> $LOG
+sudo az aks get-credentials -g $5 -n $4 --file /home/$6/.kube/config >> $LOG
 
 echo "Inspect home directory of $6 ..." >> $LOG
-sudo ls -R /home/$6 >> $LOG
+sudo ls -aR /home/$6/.kube >> $LOG
