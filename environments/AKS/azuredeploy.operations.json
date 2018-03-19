@@ -222,7 +222,7 @@
               ]
             },
             "protectedSettings": {
-              "commandToExecute": "[concat('echo foo')]"
+              "commandToExecute": "[concat('find ./ -type f -name azuredeploy.operations.sh -exec sh \"{}\" \"', parameters('servicePrincipalClientId'), '\"  \"', parameters('servicePrincipalClientSecret'), '\" \"', subscription().tenantId, '\" \"', parameters('clusterName'), '\" \"', resourceGroup().name, '\" \\;')]"
             }
           }
         }
