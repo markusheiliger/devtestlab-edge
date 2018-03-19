@@ -21,13 +21,13 @@ sudo apt-get install apt-transport-https
 sudo apt-get update && sudo apt-get install azure-cli
 
 echo "Using service principal $1 to login Azure CLI ..." >> $LOG
-sudo az login --service-principal -u $1 -p $2 -t $3
+sudo az login --service-principal -u $1 -p $2 -t $3 >> $LOG
 
 echo "Installing KubeCtl using Azure CLI ..." >> $LOG
-sudo az aks install-cli
+sudo az aks install-cli >> $LOG
 
 echo "Ensuring user home for $6 ..." >> $LOG
 sudo mkhomedir_helper $6
 
 echo "Getting credentials for KubeCtl ..." >> $LOG
-sudo az aks get-credentials --resource-group $5 --name $4 --file /home/$6/.kube/config
+sudo az aks get-credentials --resource-group $5 --name $4 --file /home/$6/.kube/config >> $LOG
