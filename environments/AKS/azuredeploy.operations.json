@@ -220,7 +220,7 @@
               "fileUris": [
                 "[concat(parameters('_artifactsLocation'), '/azuredeploy.operations.sh', parameters('_artifactsLocationSasToken'))]"
               ],
-              "commandToExecute": "[concat('find ./ -type f -name azuredeploy.operations.sh -exec sh \"{}\" \"', parameters('servicePrincipalClientId'), '\"  \"', parameters('servicePrincipalClientSecret'), '\" \"', subscription().tenantId, '\" \"', parameters('clusterName'), '\" \"', resourceGroup().name, '\" \\;')]"
+              "commandToExecute": "[concat('find ./ -type f -name azuredeploy.operations.sh -exec sh \"{}\" \"', parameters('servicePrincipalClientId'), '\"  \"', parameters('servicePrincipalClientSecret'), '\" \"', subscription().tenantId, '\" \"', parameters('clusterName'), '\" \"', resourceGroup().name, '\" \"', parameters('adminUsername'), '\" \\;')]"
             }
           }
         }
