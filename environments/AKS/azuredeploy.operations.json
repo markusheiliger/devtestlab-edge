@@ -219,9 +219,7 @@
             "settings": {
               "fileUris": [
                 "[concat(parameters('_artifactsLocation'), '/azuredeploy.operations.sh', parameters('_artifactsLocationSasToken'))]"
-              ]
-            },
-            "protectedSettings": {
+              ],
               "commandToExecute": "[concat('find ./ -type f -name azuredeploy.operations.sh -exec sh \"{}\" \"', parameters('servicePrincipalClientId'), '\"  \"', parameters('servicePrincipalClientSecret'), '\" \"', subscription().tenantId, '\" \"', parameters('clusterName'), '\" \"', resourceGroup().name, '\" \\;')]"
             }
           }
