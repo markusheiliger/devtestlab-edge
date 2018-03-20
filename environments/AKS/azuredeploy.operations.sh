@@ -34,7 +34,7 @@ sudo az aks get-credentials -g $5 -n $4 -a
 echo "### Installing helm ..."
 sudo curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
 
-echo "### Initializing helm"
+echo "### Initializing helm ..."
 sudo helm init
 
 echo "### Creating startup script to prepare kubectl config ..."
