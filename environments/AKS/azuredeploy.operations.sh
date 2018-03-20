@@ -33,3 +33,5 @@ sudo az aks install-cli
 echo "Getting credentials for KubeCtl ..." >> $LOG
 sudo az aks get-credentials -g $5 -n $4 -a 
 
+sudo mkhomedir_helper $6
+sudo cp -R /root/.kube /home/$6/
