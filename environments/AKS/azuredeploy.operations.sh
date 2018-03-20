@@ -35,7 +35,7 @@ sudo az aks get-credentials -g $5 -n $4 -a
 
 echo "Creating startup script to prepare kubectl config ..." >> $LOG
 sudo tee -a /etc/profile.d/copy-kubectl-config.sh << END
-ME="$(whoami)"
+ME="\$(whoami)"
 if [ ! -d "~/.kube" ]; then
     sudo cp -R /root/.kube /home/\$ME/
 fi
