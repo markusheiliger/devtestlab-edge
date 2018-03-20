@@ -27,11 +27,25 @@ sudo apt-get update -y
 echo "Using service principal $1 to login Azure CLI ..." >> $LOG
 sudo az login --service-principal -u $1 -p $2 -t $3 
 
-echo "Installing KubeCtl using Azure CLI ..." >> $LOG
+echo "Installing kubectl using Azure CLI ..." >> $LOG
 sudo az aks install-cli 
 
-echo "Getting credentials for KubeCtl ..." >> $LOG
+echo "Getting credentials for kubectl ..." >> $LOG
 sudo az aks get-credentials -g $5 -n $4 -a 
 
-#sudo mkhomedir_helper $6
-#sudo cp -R /root/.kube /home/$6/
+echo "Creating startup script to prepare kubectl config ..." >> $LOG
+sudo tee -a /etc/profile.d/copy-kubectl-config.sh << END
+ME="$(whoami)"
+if [ ! -d "~/.kube" ]; then
+    sudo cp -R /root/.kube /home/$ME/
+fi
+END
+
+echo "Enable execution on startup script ..." >> $LOG
+sudo chmod +x /etc/profile.d/copy-kubectl-config.sh
+
+echo "Installing helm ..." >> $LOG
+sudo curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
+
+echo "Initializing helm" >> $LOG
+sudo helm init
