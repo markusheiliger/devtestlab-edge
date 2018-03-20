@@ -17,20 +17,25 @@ echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO 
 
 echo "Registering Azure package repo and installing Azure CLI" >> $LOG
 sudo apt-key adv --keyserver packages.microsoft.com --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893
-sudo apt-get install apt-transport-https
-sudo apt-get update && sudo apt-get install azure-cli
+
+sudo apt-get install -y apt-transport-https
+sudo apt-get update -y
+
+sudo apt-get install -y azure-cli
+sudo apt-get update -y
 
 echo "Using service principal $1 to login Azure CLI ..." >> $LOG
-sudo az login --service-principal -u $1 -p $2 -t $3 >> $LOG
+sudo az login --service-principal -u $1 -p $2 -t $3 
 
 echo "Installing KubeCtl using Azure CLI ..." >> $LOG
-sudo az aks install-cli >> $LOG
+sudo az aks install-cli 
 
-echo "Ensuring user home for $6 ..." >> $LOG
-sudo mkhomedir_helper $6
+#echo "Ensuring user home for $6 ..." >> $LOG
+#sudo mkhomedir_helper $6
 
 echo "Getting credentials for KubeCtl ..." >> $LOG
-sudo az aks get-credentials -g $5 -n $4 --file /home/$6/.kube/config >> $LOG
+sudo az aks get-credentials -g $5 -n $4  
+#sudo az aks get-credentials -g $5 -n $4 --file /home/$6/.kube/config 
 
-echo "Inspect home directory of $6 ..." >> $LOG
-sudo ls -aR /home/$6/.kube >> $LOG
+#echo "Inspect home directory of $6 ..." >> $LOG
+#sudo ls -aR /home/$6/.kube >> $LOG
