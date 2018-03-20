@@ -30,12 +30,6 @@ sudo az login --service-principal -u $1 -p $2 -t $3
 echo "Installing KubeCtl using Azure CLI ..." >> $LOG
 sudo az aks install-cli 
 
-#echo "Ensuring user home for $6 ..." >> $LOG
-#sudo mkhomedir_helper $6
-
 echo "Getting credentials for KubeCtl ..." >> $LOG
-sudo az aks get-credentials -g $5 -n $4  
-#sudo az aks get-credentials -g $5 -n $4 --file /home/$6/.kube/config 
+sudo az aks get-credentials -g $5 -n $4 -a 
 
-#echo "Inspect home directory of $6 ..." >> $LOG
-#sudo ls -aR /home/$6/.kube >> $LOG
