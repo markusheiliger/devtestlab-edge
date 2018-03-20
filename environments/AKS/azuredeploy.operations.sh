@@ -33,6 +33,12 @@ sudo az aks install-cli
 echo "Getting credentials for kubectl ..." >> $LOG
 sudo az aks get-credentials -g $5 -n $4 -a 
 
+echo "Installing helm ..." >> $LOG
+sudo curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
+
+echo "Initializing helm" >> $LOG
+sudo helm init
+
 echo "Creating startup script to prepare kubectl config ..." >> $LOG
 sudo tee -a /etc/profile.d/copy-kubectl-config.sh << END
 ME="\$(whoami)"
@@ -44,9 +50,3 @@ END
 
 echo "Enable execution on startup script ..." >> $LOG
 sudo chmod +x /etc/profile.d/copy-kubectl-config.sh
-
-echo "Installing helm ..." >> $LOG
-sudo curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
-
-echo "Initializing helm" >> $LOG
-sudo helm init
