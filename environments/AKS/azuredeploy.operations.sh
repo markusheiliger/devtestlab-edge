@@ -38,6 +38,7 @@ sudo tee -a /etc/profile.d/copy-kubectl-config.sh << END
 ME="\$(whoami)"
 if [ ! -d "~/.kube" ]; then
     sudo cp -R /root/.kube /home/\$ME/
+    helm init --client-only
 fi
 END
 
