@@ -37,7 +37,7 @@ echo "Creating startup script to prepare kubectl config ..." >> $LOG
 sudo tee -a /etc/profile.d/copy-kubectl-config.sh << END
 ME="$(whoami)"
 if [ ! -d "~/.kube" ]; then
-    sudo cp -R /root/.kube /home/$ME/
+    sudo cp -R /root/.kube /home/\$ME/
 fi
 END
 
