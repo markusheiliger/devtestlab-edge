@@ -46,19 +46,19 @@
     "vNetAddressPrefixes": "192.168.0.0/16",
     "sNetAddressPrefixes": "192.168.0.0/16",
     "roleDefinition_Reader": "[concat('/subscriptions/',subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'acdd72a7-3385-48ef-bd42-f606fba81ae7')]",
-    "roleAssignment_Reader": "[guid(resourceGroup().id, parameters('clusterName'), deployment().name)]",
+    "roleAssignment_Reader": "[guid(resourceGroup().id, deployment().name)]",
     "roleDefinition_Contributor": "[concat('/subscriptions/',subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
     "roleAssignment_Contributor": "[guid(resourceGroup().id, variables('virtualNetworkName'), deployment().name)]"
   },
   "resources": [
     {
       "name": "[concat(parameters('clusterName'), '/Microsoft.Authorization/', variables('roleAssignment_Reader'))]",
-      "type": "Microsoft.ContainerService/managedClusters/providers/roleAssignments",
+      "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2015-07-01",
       "properties": {
         "roleDefinitionId": "[variables('roleDefinition_Reader')]",
         "principalId": "[parameters('servicePrincipalObjectId')]",
-        "scope": "[resourceId(subscription().subscriptionId, resourceGroup().name, 'Microsoft.ContainerService/managedClusters', parameters('clusterName'))]"
+        "scope": "[resourceGroup().id]"
       }
     },
     {
