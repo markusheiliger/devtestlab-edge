@@ -52,7 +52,7 @@
   },
   "resources": [
     {
-      "name": "[concat(parameters('clusterName'), '/Microsoft.Authorization/', variables('roleAssignment_Reader'))]",
+      "name": "[variables('roleAssignment_Reader')]",
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2015-07-01",
       "properties": {
