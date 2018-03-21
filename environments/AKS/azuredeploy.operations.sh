@@ -48,3 +48,13 @@ END
 
 echo "### Enable execution on startup script ..."
 sudo chmod +x /etc/profile.d/copy-kubectl-config.sh
+
+CLUSTERLOCATION=$(az resource show -g $5 -n $4 --resource-type "Microsoft.ContainerService/ManagedClusters" --query location --output tsv)
+CLUSTERRGNAME="MC_$5_$4_$CLUSTERLOCATION"
+CLUSTERVNETID=$(az resource list -g $CLUSTERRGNAME --resource-type "Microsoft.Network/virtualNetworks" --query '[0].id' --output tsv)
+CLUSTERVNETNAME=$(az resource list -g $CLUSTERRGNAME --resource-type "Microsoft.Network/virtualNetworks" --query '[0].name' --output tsv)
+OPERATIONSVNETID=$(az resource list -g $5 --resource-type "Microsoft.Network/virtualNetworks" --query '[0].id' --output tsv)
+OPERATIONSVNETNAME=$(az resource list -g $5 --resource-type "Microsoft.Network/virtualNetworks" --query '[0].name' --output tsv)
+
+az network vnet peering create --name LinkClusterToOperations --resource-group $CLUSTERRGNAME --vnet-name $CLUSTERVNETNAME --remote-vnet-id $OPERATIONSVNETID
+az network vnet peering create --name LinkOperationsToCluster --resource-group $5 --vnet-name $OPERATIONSVNETNAME --remote-vnet-id $CLUSTERVNETID --allow-vnet-access
