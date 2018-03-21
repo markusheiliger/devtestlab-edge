@@ -6,7 +6,13 @@
             "type": "string",
             "minLength": 3,
             "metadata": {
-                "description": "Cluster node admin username."
+                "description": "Cluster admin username."
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Cluster admin password (needed for RDP connections to the Ops VM)."
             }
         },
         "adminPublicKey": {
@@ -185,6 +191,9 @@
                     },
                     "adminUsername": {
                         "value": "[parameters('adminUsername')]"
+                    },                    
+                    "adminPassword": {
+                        "value": "[parameters('adminPassword')]"
                     },
                     "adminPublicKey": {
                         "value": "[parameters('adminPublicKey')]"

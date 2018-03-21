@@ -96,6 +96,20 @@
               "priority": 100,
               "direction": "Inbound"
             }
+          },          
+          {
+            "name": "rdp-rule",
+            "properties": {
+              "description": "Allow RDP",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "Internet",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 110,
+              "direction": "Inbound"
+            }
           }
         ]
       }
@@ -181,8 +195,8 @@
         "osProfile": {
           "computerName": "[variables('vmName')]",
           "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
           "linuxConfiguration": {
-            "disablePasswordAuthentication": true,
             "ssh": {
               "publicKeys": [
                 {

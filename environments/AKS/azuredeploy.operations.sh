@@ -17,12 +17,13 @@ echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO 
 
 echo "### Registering Azure package repo and installing Azure CLI" >&2
 sudo apt-key adv --keyserver packages.microsoft.com --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893
+sudo apt-get update
 
 sudo apt-get install -y apt-transport-https
-sudo apt-get update -y
-
 sudo apt-get install -y azure-cli
-sudo apt-get update -y
+sudo apt-get install -y xrdp
+sudo apt-get install -y xfce4
+sudo apt-get update
 
 echo "### Using service principal $1 to login Azure CLI ..." >&2
 sudo az login --service-principal -u "$1" -p "$2" --tenant "$3" 
@@ -65,3 +66,8 @@ OPERATIONSVNETNAME=$(az resource list -g $5 --resource-type "Microsoft.Network/v
 echo "### Peer cluster and operations vnet ..." >&2
 az network vnet peering create --name LinkClusterToOperations --resource-group $CLUSTERRGNAME --vnet-name $CLUSTERVNETNAME --remote-vnet-id $OPERATIONSVNETID
 az network vnet peering create --name LinkOperationsToCluster --resource-group $5 --vnet-name $OPERATIONSVNETNAME --remote-vnet-id $CLUSTERVNETID --allow-vnet-access
+
+echo "### Configure xfce4 as desktop ..." >&2
+sudo echo xfce4-session >/root/.xsession
+sudo sed -i '/\/etc\/X11\/Xsession/i xfce4-session' /etc/xrdp/startwm.sh
+sudo service xrdp restart
