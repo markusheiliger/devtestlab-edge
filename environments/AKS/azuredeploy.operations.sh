@@ -46,6 +46,7 @@ sudo helm init
 echo "### Creating startup script to prepare kubectl config ..." >&2
 sudo tee -a /etc/profile.d/copy-kubectl-config.sh << END
 ME="\$(whoami)"
+IP=\$(curl ipinfo.io/ip)
 if [ ! -d "/home/\$ME/.kube" ]; then
     sudo cp -R /root/.kube /home/\$ME/
 fi
@@ -53,11 +54,16 @@ if [ ! -d "/home/\$ME/.helm" ]; then
     helm init --client-only
 fi
 ps cax | grep kubectl > /dev/null
-if [ \$? -eq 0 ]; then
-  echo "Already serving on 127.0.0.1:8001"
-else
-  kubectl proxy &
+if [ \$? -ne 0 ]; then
+    (kubectl proxy &) > /dev/null 2>&1
 fi
+echo "####################"
+echo ""
+echo "Serving kubernetes dashboard on 127.0.0.1:8001"
+echo ""
+echo "Use 'ssh \$ME@\$IP -L 8001:localhost:8001' to access the dashboard from your local workstation."
+echo ""
+echo "####################"
 END
 
 echo "### Enable execution on startup script ..." >&2
