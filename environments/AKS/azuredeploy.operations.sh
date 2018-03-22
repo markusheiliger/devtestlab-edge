@@ -46,9 +46,17 @@ sudo helm init
 echo "### Creating startup script to prepare kubectl config ..." >&2
 sudo tee -a /etc/profile.d/copy-kubectl-config.sh << END
 ME="\$(whoami)"
-if [ ! -d "~/.kube" ]; then
+if [ ! -d "/home/\$ME/.kube" ]; then
     sudo cp -R /root/.kube /home/\$ME/
+fi
+if [ ! -d "/home/\$ME/.helm" ]; then
     helm init --client-only
+fi
+ps cax | grep kubectl > /dev/null
+if [ $? -eq 0 ]; then
+  echo "Already serving on 127.0.0.1:8001"
+else
+  kubectl proxy &
 fi
 END
 
