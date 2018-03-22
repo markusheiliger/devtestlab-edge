@@ -53,7 +53,7 @@ if [ ! -d "/home/\$ME/.helm" ]; then
     helm init --client-only
 fi
 ps cax | grep kubectl > /dev/null
-if [ $? -eq 0 ]; then
+if [ \$? -eq 0 ]; then
   echo "Already serving on 127.0.0.1:8001"
 else
   kubectl proxy &
