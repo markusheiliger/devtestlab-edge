@@ -46,7 +46,7 @@ sudo helm init
 echo "### Creating startup script to prepare kubectl config ..." >&2
 sudo tee -a /etc/profile.d/copy-kubectl-config.sh << END
 ME="\$(whoami)"
-IP=\$(curl ipinfo.io/ip)
+IP=\$(curl -s ipinfo.io/ip)
 if [ ! -d "/home/\$ME/.kube" ]; then
     sudo cp -R /root/.kube /home/\$ME/
 fi
@@ -61,9 +61,14 @@ echo "####################"
 echo ""
 echo "Serving kubernetes dashboard on 127.0.0.1:8001"
 echo ""
-echo "Use 'ssh \$ME@\$IP -L 8001:localhost:8001' to access the dashboard from your local workstation."
+echo "Use the below command to access the dashboard"
+echo "from your local workstation and enable agent"
+echo "forwarding to access cluster nodes."
+echo ""
+echo "putty -ssh \$ME@\$IP -L 8001:localhost:8001 -A"
 echo ""
 echo "####################"
+echo ""
 END
 
 echo "### Enable execution on startup script ..." >&2
