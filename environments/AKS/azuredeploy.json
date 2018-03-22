@@ -48,8 +48,7 @@
             "type": "string",
             "defaultValue": "Linux",
             "allowedValues": [
-                "Linux",
-                "Windows"
+                "Linux"
             ],
             "metadata": {
                 "description": "OsType to be used to specify os type. Choose from Linux and Windows. Default to Linux."
