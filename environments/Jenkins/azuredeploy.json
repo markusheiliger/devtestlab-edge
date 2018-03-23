@@ -6,7 +6,7 @@
     "variables": {
         "servicePlanTier": "Basic",
         "servicePlanSku": "B1",
-        "hostingSiteName": "[toLower(concat(resourceGroup().name, '-', uniqueString(resourceGroup().id))]",
+        "hostingSiteName": "[toLower(concat(resourceGroup().name, '-', uniqueString(resourceGroup().id)))]",
         "hostingPlanName": "[toLower(concat(variables('hostingSiteName'), '-serviceplan'))]"
     },
     "resources": [
