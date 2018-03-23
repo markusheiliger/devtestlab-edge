@@ -2,18 +2,12 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "siteName": {
-            "type": "string",
-            "metadata": {
-                "description": "Name of azure web app"
-            }
-        }
     },
     "variables": {
         "servicePlanTier": "Basic",
         "servicePlanSku": "B1",
-        "hostingSiteName": "[concat(parameters('siteName'), '-', uniqueString(resourceGroup().id)]",
-        "hostingPlanName": "[concat(variables('hostingSiteName'), '-serviceplan')]"
+        "hostingSiteName": "[toLower(concat(resourceGroup().name, '-', uniqueString(resourceGroup().id))]",
+        "hostingPlanName": "[toLower(concat(variables('hostingSiteName'), '-serviceplan'))]"
     },
     "resources": [
         {
