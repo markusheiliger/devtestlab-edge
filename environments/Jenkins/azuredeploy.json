@@ -12,7 +12,7 @@
     "resources": [
         {
             "type": "Microsoft.Web/sites",
-            "name": "[parameters('hostingSiteName')]",
+            "name": "[variables('hostingSiteName')]",
             "apiVersion": "2016-03-01",
             "location": "[resourceGroup().location]",
             "dependsOn": [
@@ -22,7 +22,7 @@
                 "siteConfig": {
                     "linuxFxVersion": "DOCKER|jenkins/jenkins:lts"
                 },
-                "name": "[parameters('siteName')]",
+                "name": "[variables('hostingSiteName')]",
                 "serverFarmId": "[variables('hostingPlanName')]",
                 "hostingEnvironment": ""
             }
