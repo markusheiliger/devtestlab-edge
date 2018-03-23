@@ -1,243 +1,55 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
     "contentVersion": "1.0.0.0",
     "parameters": {
-      "adminUsername": {
-        "type": "string",
-        "defaultValue": "azureuser",
-        "metadata": {
-          "description": "User name for the Virtual Machine."
+        "siteName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of azure web app"
+            }
         }
-      },
-      "sshPublicKey": {
-        "type": "string",
-        "metadata": {
-          "description": "Configure all linux machines with the SSH public key string, for example 'ssh-rsa AAAAB...snip...UcyupgH azureuser@linuxvm'"
-        }
-      },
-      "virtualMachineSize": {
-        "type": "string",
-        "defaultValue": "Standard_DS2_v2",
-        "allowedValues": [
-          "Standard_B2s",
-          "Standard_B2ms",
-          "Standard_D2s_v3",
-          "Standard_D2_v3",
-          "Standard_DS2_v2",
-          "Standard_D2_v2",
-          "Standard_DS2",
-          "Standard_D2",
-          "Standard_A2_v2",
-          "Standard_A2"
-        ],
-        "metadata": {
-          "description": "The virutal machine size to use. We picked out the sizes with 2 vCPUs, but in real world projects you can choose other sizes as you desired."
-        }
-      },
-      "_artifactsLocation": {
-        "type": "string",
-        "metadata": {
-          "description": "The base URI where artifacts required by this template are located. When the template is deployed using the accompanying scripts, a private location in the subscription will be used and this value will be automatically generated."
-        },
-        "defaultValue": "https://raw.githubusercontent.com/markusheiliger/devtestlab-edge/master/environments/Jenkins"
-      },
-      "_artifactsLocationSasToken": {
-        "type": "securestring",
-        "metadata": {
-          "description": "The sasToken required to access _artifactsLocation.  When the template is deployed using the accompanying scripts, a sasToken will be automatically generated."
-        },
-        "defaultValue": ""
-      }
     },
     "variables": {
-      "resourcePrefix": "jenkins",
-      "OSDiskName": "[concat(variables('resourcePrefix'), '-os-disk')]",
-      "nicName": "[concat(variables('resourcePrefix'), '-nic')]",
-      "subnetName": "[concat(variables('resourcePrefix'), '-subnet')]",
-      "publicIPAddressName": "[concat(variables('resourcePrefix'), '-ip')]",
-      "vmName": "[concat(variables('resourcePrefix'), '-vm')]",
-      "virtualNetworkName": "[concat(variables('resourcePrefix'), '-vnet')]",
-      "vmExtensionName": "[concat(variables('resourcePrefix'), '-init')]",
-      "frontEndNSGName": "[concat(variables('resourcePrefix'), '-nsg')]",
+        "servicePlanTier": "Basic",
+        "servicePlanSku": "B1",
+        "hostingSiteName": "[concat(parameters('siteName'), '-', uniqueString(resourceGroup().id)]",
+        "hostingPlanName": "[concat(variables('hostingSiteName'), '-serviceplan')]"
     },
     "resources": [
-      {
-        "type": "Microsoft.Compute/virtualMachines",
-        "name": "[variables('vmName')]",
-        "apiVersion": "2016-04-30-preview",
-        "location": "[resourceGroup().location]",
-        "properties": {
-          "osProfile": {
-            "computerName": "[variables('vmName')]",
-            "adminUsername": "[parameters('adminUsername')]",
-            "linuxConfiguration": {
-              "disablePasswordAuthentication": true,
-              "ssh": {
-                "publicKeys": [
-                  {
-                    "path": "[concat('/home/', parameters('adminUsername'), '/.ssh/authorized_keys')]",
-                    "keyData": "[parameters('sshPublicKey')]"
-                  }
-                ]
-              }
-            }
-          },
-          "hardwareProfile": {
-            "vmSize": "[parameters('virtualMachineSize')]"
-          },
-          "storageProfile": {
-            "imageReference": {
-              "publisher": "Canonical",
-              "offer": "UbuntuServer",
-              "sku": "16.04-LTS",
-              "version": "latest"
-            },
-            "osDisk": {
-              "name": "[variables('OSDiskName')]",
-              "createOption": "FromImage",
-              "managedDisk": {
-                "storageAccountType": "Standard_LRS"
-              }
-            },
-            "dataDisks": []
-          },
-          "networkProfile": {
-            "networkInterfaces": [
-              {
-                "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
-              }
-            ]
-          }
-        },
-        "dependsOn": [
-          "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
-        ],
-        "resources": [
-          {
-            "type": "extensions",
-            "name": "[variables('vmExtensionName')]",
-            "apiVersion": "2015-06-15",
+        {
+            "type": "Microsoft.Web/sites",
+            "name": "[parameters('hostingSiteName')]",
+            "apiVersion": "2016-03-01",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-              "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+                "[variables('hostingPlanName')]"
             ],
             "properties": {
-              "publisher": "Microsoft.Azure.Extensions",
-              "type": "CustomScript",
-              "typeHandlerVersion": "2.0",
-              "autoUpgradeMinorVersion": true,
-              "settings": {
-                "fileUris": [
-                  "[concat(variables('_artifactsLocation'), '/azuredeploy.sh', variables('_artifactsLocationSasToken'))]"
-                ]
-              },
-              "protectedSettings": {
-                "commandToExecute": "[concat('find ./ -type f -name azuredeploy.sh -exec sh \"{}\" \\;')]"
-              }
-            }
-          }
-        ]
-      },
-      {
-        "type": "Microsoft.Network/virtualNetworks",
-        "name": "[variables('virtualNetworkName')]",
-        "apiVersion": "2016-12-01",
-        "location": "[resourceGroup().location]",
-        "properties": {
-          "addressSpace": {
-            "addressPrefixes": [
-              "10.89.0.0/16"
-            ]
-          },
-          "subnets": [
-            {
-              "name": "[variables('subnetName')]",
-              "properties": {
-                "addressPrefix": "10.89.0.0/24"
-              }
-            }
-          ]
-        }
-      },
-      {
-        "type": "Microsoft.Network/networkInterfaces",
-        "name": "[variables('nicName')]",
-        "apiVersion": "2016-09-01",
-        "location": "[resourceGroup().location]",
-        "properties": {
-          "ipConfigurations": [
-            {
-              "name": "ipconfig1",
-              "properties": {
-                "subnet": {
-                  "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]"
+                "siteConfig": {
+                    "linuxFxVersion": "DOCKER|jenkins/jenkins:lts"
                 },
-                "privateIPAllocationMethod": "Dynamic",
-                "publicIpAddress": {
-                  "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
-                }
-              }
+                "name": "[parameters('siteName')]",
+                "serverFarmId": "[variables('hostingPlanName')]",
+                "hostingEnvironment": ""
             }
-          ],
-          "networkSecurityGroup": {
-            "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('frontEndNSGName'))]"
-          }
         },
-        "dependsOn": [
-          "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
-          "[resourceId('Microsoft.Network/publicIpAddresses', variables('publicIpAddressName'))]",
-          "[resourceId('Microsoft.Network/networkSecurityGroups', variables('frontEndNSGName'))]"
-        ]
-      },
-      {
-        "type": "Microsoft.Network/publicIPAddresses",
-        "name": "[variables('publicIPAddressName')]",
-        "apiVersion": "2017-06-01",
-        "location": "[resourceGroup().location]",
-        "properties": {
-          "publicIPAllocationMethod": "Dynamic",
-          "dnsSettings": {
-            "domainNameLabel": "[parameters('jenkinsDnsPrefix')]"
-          }
-        }
-      },
-      {
-        "type": "Microsoft.Network/networkSecurityGroups",
-        "name": "[variables('frontEndNSGName')]",
-        "apiVersion": "2017-06-01",
-        "location": "[resourceGroup().location]",
-        "properties": {
-          "securityRules": [
-            {
-              "name": "default-allow-ssh",
-              "properties": {
-                "priority": 1000,
-                "protocol": "Tcp",
-                "access": "Allow",
-                "direction": "Inbound",
-                "sourceAddressPrefix": "*",
-                "sourcePortRange": "*",
-                "destinationAddressPrefix": "*",
-                "destinationPortRange": "22"
-              }
+        {
+            "apiVersion": "2016-09-01",
+            "name": "[variables('hostingPlanName')]",
+            "type": "Microsoft.Web/serverfarms",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "name": "[variables('hostingPlanName')]",
+                "workerSizeId": "1",
+                "reserved": true,
+                "numberOfWorkers": "1",
+                "hostingEnvironment": ""
             },
-            {
-              "name": "allow-jenkins-http",
-              "properties": {
-                "priority": 1001,
-                "protocol": "Tcp",
-                "access": "Allow",
-                "direction": "Inbound",
-                "sourceAddressPrefix": "*",
-                "sourcePortRange": "*",
-                "destinationAddressPrefix": "*",
-                "destinationPortRange": "80"
-              }
-            }
-          ]
+            "sku": {
+                "Tier": "[variables('servicePlanTier')]",
+                "Name": "[variables('servicePlanSku')]"
+            },
+            "kind": "linux"
         }
-      }
-    ],
-    "outputs": {
-    }
-  }
+    ]
+}
