@@ -61,7 +61,7 @@
         "databaseSkuName":"MYSQLB100",
         "databaseSkuTier":"Basic",
         "databaseSkuSizeMB": 51200,
-        "databaseUrl": "[concat('mysql://', variables('mysqlName'), '.mysql.database.azure.com/', variables('databaseName'),'?characterEncoding=UTF-8&elideSetAutoCommits=true')]"
+        "databaseUrl": "[concat('mysql://', variables('mysqlName'), '.mysql.database.azure.com/', variables('databaseName'))]"
     },
     "resources": [
         {

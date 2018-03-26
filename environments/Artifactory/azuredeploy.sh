@@ -25,7 +25,7 @@ echo "### Configure JDBC driver ..." >&2
 sudo tee -a /etc/opt/jfrog/artifactory/storage.properties << END
 type=mysql
 driver=com.mysql.jdbc.Driver
-url=$4
+url=$4?characterEncoding=UTF-8&elideSetAutoCommits=true
 username=$2
 password=$3
 END
