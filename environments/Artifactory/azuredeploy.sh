@@ -40,9 +40,11 @@ password=$3
 END
 
 echo "### Mounting file share ..." 2>&1
-#sudo az storage share create --name files --quota 2048 --connection-string $current_env_conn_string 1 > /dev/null
-#sudo mkdir /mnt/AzureFileShare
-#echo "//$6.file.core.windows.net/<share-name> /mnt/AzureFileShare cifs nofail,vers=2.1,username=$6,password=$7,dir_mode=0777,file_mode=0777,serverino" | sudo tee -a /etc/fstab
+sudo az login --msi
+sudo az storage share create --name files --connection-string "DefaultEndpointsProtocol=https;AccountName=$6;AccountKey=$7;EndpointSuffix=core.windows.net"
+sudo mkdir /mnt/AzureFileShare
+echo "//$6.file.core.windows.net/files /mnt/AzureFileShare cifs nofail,vers=3.0,username=$6,password=$7,dir_mode=0777,file_mode=0777,serverino" | sudo tee -a /etc/fstab
+sudo mount --all
 
 echo "### Starting artifactory as service ..." 2>&1
 sudo service artifactory start
