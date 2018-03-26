@@ -42,7 +42,7 @@ while $(curl -s http://localhost:8081/artifactory | grep -q "Starting Up"); do
 done
 
 echo "### Changing default admin password ..." 2>&1
-sudo curl -sX POST -u admin:password -H "Content-type: application/json" -d '{ "userName" : "admin", "oldPassword" : "password", "newPassword1" : "$1", "newPassword2" : "$1" }' http://localhost:8081/artifactory/api/security/users/authorization/changePassword
+sudo curl -sX POST -u admin:password -H "Content-type: application/json" -d "{ \"userName\" : \"admin\", \"oldPassword\" : \"password\", \"newPassword1\" : \"$1\", \"newPassword2\" : \"$1\" }" http://localhost:8081/artifactory/api/security/users/authorization/changePassword
 
 echo "### Open firewall port 8081 and reload ..." 2>&1
 sudo firewall-cmd --zone=public --add-port=8081/tcp --permanent
