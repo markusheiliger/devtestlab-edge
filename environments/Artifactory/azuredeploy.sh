@@ -5,9 +5,17 @@
 # $3 = database password
 # $4 = database server
 # $5 = database name
+# $6 = file storage account
+# $7 = file storage key
 
-echo "### Installing openjdk 1.8.0 ..." 2>&1
-sudo yum install -y java-1.8.0-openjdk
+echo "Import the Microsoft repository key and create repository info ..."  2>&1
+sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+echo -e "[azure-cli]\nname=Azure CLI\nbaseurl=https://packages.microsoft.com/yumrepos/azure-cli\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc"  | sudo tee /etc/yum.repos.d/azure-cli.repo
+
+echo "### Installing packages ..." 2>&1
+sudo yum install -y java-1.8.0-openjdk samba-client samba-common cifs-utils azure-cli
+
+echo "### Preparing openjdk 1.8.0 - set JAVA_HOME ..." 2>&1
 echo "JAVA_HOME=\"$(find /usr/lib/jvm -type f -name java | sed -r 's|/[^/]+$||' | sed -r 's|/[^/]+$||')/\"" | sudo tee --append /etc/environment > /dev/null
 
 echo "### Installing artifactory ..." 2>&1
@@ -31,6 +39,11 @@ username=$2
 password=$3
 END
 
+echo "### Mounting file share ..." 2>&1
+#sudo az storage share create --name files --quota 2048 --connection-string $current_env_conn_string 1 > /dev/null
+#sudo mkdir /mnt/AzureFileShare
+#echo "//$6.file.core.windows.net/<share-name> /mnt/AzureFileShare cifs nofail,vers=2.1,username=$6,password=$7,dir_mode=0777,file_mode=0777,serverino" | sudo tee -a /etc/fstab
+
 echo "### Starting artifactory as service ..." 2>&1
 sudo service artifactory start
 sleep 30
@@ -47,3 +60,4 @@ sudo curl -sX POST -u admin:password -H "Content-type: application/json" -d "{ \
 echo "### Open firewall port 8081 and reload ..." 2>&1
 sudo firewall-cmd --zone=public --add-port=8081/tcp --permanent
 sudo firewall-cmd --reload
+

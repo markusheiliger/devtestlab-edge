@@ -44,6 +44,8 @@
     },
     "variables": {
         "vmName": "[concat('artifactory-', uniqueString(resourceGroup().id))]",
+        "storageAccountName": "[concat(variables('vmName'), '-files')]",
+        "storageAccountType": "Standard_LRS",
         "osDiskName": "[concat(variables('vmName'), '-dsk')]",
         "publicIPAddressName": "[concat(variables('vmName'), '-pip')]",
         "virtualNetworkName": "[concat(variables('vmName'), '-vnet')]",
@@ -57,12 +59,39 @@
         "mysqlName": "[concat(variables('vmName'), '-mysql')]",
         "databaseName": "artifactory",
         "databaseVersion": "5.6",
-        "databaseDTU":100,
-        "databaseSkuName":"MYSQLB100",
-        "databaseSkuTier":"Basic",
-        "databaseSkuSizeMB": 51200
+        "databaseDTU": 100,
+        "databaseSkuName": "MYSQLB100",
+        "databaseSkuTier": "Basic",
+        "databaseSkuSizeMB": 51200,
+        "roleDefinition_Contributor": "[concat('/subscriptions/',subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+        "roleAssignment_Contributor": "[guid(resourceGroup().id, variables('virtualNetworkName'), deployment().name)]"
     },
     "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('storageAccountName')]",
+            "apiVersion": "2017-10-01",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[variables('storageAccountType')]"
+            },
+            "kind": "Storage",
+            "properties": {}
+        },
+        {
+            "name": "[concat(variables('storageAccountName'), '/Microsoft.Authorization/', variables('roleAssignment_Contributor'))]",
+            "type": "Microsoft.Storage/storageAccounts/providers/roleAssignments",
+            "apiVersion": "2015-07-01",
+            "properties": {
+                "roleDefinitionId": "[variables('roleDefinition_Contributor')]",
+                "principalId": "[reference(concat(resourceId('Microsoft.Compute/virtualMachines/', variables('vmName')),'/providers/Microsoft.ManagedIdentity/Identities/default'),'2015-08-31-PREVIEW').principalId]",
+                "scope": "[resourceId(subscription().subscriptionId, resourceGroup().name, 'Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+                "[resourceId('Microsoft.Compute/virtualMachines/extensions', variables('vmName'), 'ManagedIdentity')]"
+            ]
+        },
         {
             "apiVersion": "2016-09-01",
             "type": "Microsoft.Network/publicIPAddresses",
@@ -129,7 +158,7 @@
                 },
                 "subnets": [
                     {
-                        "name": "aks-operations",
+                        "name": "artifactory",
                         "properties": {
                             "addressPrefix": "[variables('sNetAddressPrefixes')]",
                             "networkSecurityGroup": {
@@ -162,7 +191,7 @@
                                 "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
                             },
                             "subnet": {
-                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName')),'/subnets/aks-operations')]"
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName')),'/subnets/artifactory')]"
                             }
                         }
                     }
@@ -223,11 +252,32 @@
             "resources": [
                 {
                     "type": "extensions",
+                    "name": "ManagedIdentity",
+                    "apiVersion": "2016-03-30",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+                    ],
+                    "properties": {
+                        "publisher": "Microsoft.ManagedIdentity",
+                        "type": "ManagedIdentityExtensionForLinux",
+                        "typeHandlerVersion": "1.0",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "port": 50342
+                        },
+                        "protectedSettings": {}
+                    }
+                },
+                {
+                    "type": "extensions",
                     "name": "Initialize",
                     "apiVersion": "2015-06-15",
                     "location": "[resourceGroup().location]",
                     "dependsOn": [
                         "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]",
+                        "[resourceId('Microsoft.Compute/virtualMachines/extensions', variables('vmName'), 'ManagedIdentity')]",
+                        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
                         "[resourceId('Microsoft.DBforMySQL/servers/databases', variables('mysqlName'), variables('databaseName'))]"
                     ],
                     "properties": {
@@ -239,7 +289,7 @@
                             "fileUris": [
                                 "[concat(parameters('_artifactsLocation'), '/azuredeploy.sh', parameters('_artifactsLocationSasToken'))]"
                             ],
-                            "commandToExecute": "[concat('find ./ -type f -name azuredeploy.sh -exec sh \"{}\" \"', parameters('artifactoryAdminPassword') ,'\" \"', parameters('adminUsername') ,'\" \"', parameters('adminPassword') ,'\" \"', variables('mysqlName') ,'\" \"', variables('databaseName'), '\" \\;')]"
+                            "commandToExecute": "[concat('find ./ -type f -name azuredeploy.sh -exec sh \"{}\" \"', parameters('artifactoryAdminPassword') ,'\" \"', parameters('adminUsername') ,'\" \"', parameters('adminPassword') ,'\" \"', variables('mysqlName') ,'\" \"', variables('databaseName'),'\" \"', variables('storageAccountName'),'\" \"', listKeys(variables('storageAccountName'),'2017-10-01').keys[0].value, '\" \\;')]"
                         }
                     }
                 }
@@ -294,7 +344,6 @@
                 }
             ]
         }
-
     ],
     "outputs": {}
 }
