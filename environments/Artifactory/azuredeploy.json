@@ -60,8 +60,7 @@
         "databaseDTU":100,
         "databaseSkuName":"MYSQLB100",
         "databaseSkuTier":"Basic",
-        "databaseSkuSizeMB": 51200,
-        "databaseUrl": "[concat('mysql://', variables('mysqlName'), '.mysql.database.azure.com/', variables('databaseName'))]"
+        "databaseSkuSizeMB": 51200
     },
     "resources": [
         {
@@ -240,7 +239,7 @@
                             "fileUris": [
                                 "[concat(parameters('_artifactsLocation'), '/azuredeploy.sh', parameters('_artifactsLocationSasToken'))]"
                             ],
-                            "commandToExecute": "[concat('find ./ -type f -name azuredeploy.sh -exec sh \"{}\" \"', parameters('artifactoryAdminPassword') ,'\" \"', parameters('adminUsername') ,'\" \"', parameters('adminPassword') ,'\" \"', variables('databaseUrl') ,\" \\;')]"
+                            "commandToExecute": "[concat('find ./ -type f -name azuredeploy.sh -exec sh \"{}\" \"', parameters('artifactoryAdminPassword') ,'\" \"', parameters('adminUsername') ,'\" \"', parameters('adminPassword') ,'\" \"', variables('mysqlName') ,'\" \"', variables('databaseName'), '\" \\;')]"
                         }
                     }
                 }

@@ -3,7 +3,8 @@
 # $1 = aritfactory admin password
 # $2 = database username
 # $3 = database password
-# $4 = database url
+# $4 = database server
+# $5 = database name
 
 echo "### Installing openjdk 1.8.0 ..." >&2
 sudo yum install -y java-1.8.0-openjdk
@@ -25,7 +26,7 @@ echo "### Configure JDBC driver ..." >&2
 sudo tee -a /etc/opt/jfrog/artifactory/storage.properties << END
 type=mysql
 driver=com.mysql.jdbc.Driver
-url=$4?characterEncoding=UTF-8&elideSetAutoCommits=true
+url=mysql://$4.mysql.database.azure.com/$5?characterEncoding=UTF-8&elideSetAutoCommits=true
 username=$2
 password=$3
 END
