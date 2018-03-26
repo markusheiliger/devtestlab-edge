@@ -6,13 +6,25 @@
             "type": "string",
             "minLength": 3,
             "metadata": {
-                "description": "Cluster admin username."
+                "description": "The admin username."
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The admin password."
             }
         },
         "adminPublicKey": {
             "type": "securestring",
             "metadata": {
                 "description": "Certificate public key used to authenticate with VMs through SSH. The certificate must be in PEM format with or without headers."
+            }
+        },
+        "artifactoryAdminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Set the admin password for artifactory."
             }
         },
         "_artifactsLocation": {
@@ -41,7 +53,15 @@
         "sNetAddressPrefixes": "192.168.0.0/16",
         "imagePublisher": "redhat",
         "imageOffer": "rhel",
-        "imageSKU": "7.3"
+        "imageSKU": "7.3",
+        "mysqlName": "[concat(variables('vmName'), '-mysql')]",
+        "databaseName": "artifactory",
+        "databaseVersion": "5.6",
+        "databaseDTU":100,
+        "databaseSkuName":"MYSQLB100",
+        "databaseSkuTier":"Basic",
+        "databaseSkuSizeMB": 51200
+
     },
     "resources": [
         {
@@ -50,7 +70,7 @@
             "name": "[variables('publicIPAddressName')]",
             "location": "[resourceGroup().location]",
             "properties": {
-                "publicIPAllocationMethod": "Dynamic",
+                "publicIPAllocationMethod": "Static",
                 "dnsSettings": {
                     "domainNameLabel": "[variables('vmName')]"
                 }
@@ -208,7 +228,8 @@
                     "apiVersion": "2015-06-15",
                     "location": "[resourceGroup().location]",
                     "dependsOn": [
-                        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+                        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]",
+                        "[resourceId('Microsoft.DBforMySQL/servers/databases', variables('mysqlName'), variables('databaseName'))]"
                     ],
                     "properties": {
                         "publisher": "Microsoft.Azure.Extensions",
@@ -219,12 +240,62 @@
                             "fileUris": [
                                 "[concat(parameters('_artifactsLocation'), '/azuredeploy.sh', parameters('_artifactsLocationSasToken'))]"
                             ],
-                            "commandToExecute": "[concat('find ./ -type f -name azuredeploy.sh -exec sh \"{}\" \\;')]"
+                            "commandToExecute": "[concat('find ./ -type f -name azuredeploy.sh -exec sh \"{}\" \"', parameters('adminPassword') ,'\" \\;')]"
                         }
                     }
                 }
             ]
+        },
+        {
+            "name": "[variables('mysqlName')]",
+            "type": "Microsoft.DBforMySQL/servers",
+            "apiVersion": "2016-02-01-privatepreview",
+            "location": "[resourceGroup().location]",
+            "kind": "",
+            "properties": {
+                "version": "[variables('databaseVersion')]",
+                "administratorLogin": "[parameters('adminUsername')]",
+                "administratorLoginPassword": "[parameters('adminPassword')]",
+                "storageMB": "[variables('databaseSkuSizeMB')]"
+            },
+            "sku": {
+                "name": "[variables('databaseSkuName')]",
+                "tier": "[variables('databaseSkuTier')]",
+                "capacity": "[variables('databaseDTU')]",
+                "size": "[variables('databaseSkuSizeMB')]",
+                "family": "SkuFamily"
+            },
+            "resources": [
+                {
+                    "name": "[concat(variables('mysqlName'),'-firewall')]",
+                    "type": "firewallrules",
+                    "apiVersion": "2016-02-01-privatepreview",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[concat('Microsoft.DBforMySQL/servers/', variables('mysqlName'))]",
+                        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+                    ],
+                    "properties": {
+                        "startIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName')), providers('Microsoft.Network', 'publicIPAddresses').apiVersions[0]).ipAddress]",
+                        "endIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName')), providers('Microsoft.Network', 'publicIPAddresses').apiVersions[0]).ipAddress]"
+                    }
+                },
+                {
+                    "name": "[variables('databaseName')]",
+                    "type": "databases",
+                    "apiVersion": "2016-02-01-privatepreview",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[concat('Microsoft.DBforMySQL/servers/', variables('mysqlName'))]"
+                    ],
+                    "properties": {
+                        "charset": "utf8",
+                        "collation": "utf8_general_ci"
+                    }
+                }
+            ]
         }
+
     ],
     "outputs": {}
 }
