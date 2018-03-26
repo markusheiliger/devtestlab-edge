@@ -44,7 +44,7 @@
     },
     "variables": {
         "vmName": "[concat('artifactory-', uniqueString(resourceGroup().id))]",
-        "storageAccountName": "[concat(variables('vmName'), '-files')]",
+        "storageAccountName": "[replace(variables('vmName'), '-', '')]",
         "storageAccountType": "Standard_LRS",
         "osDiskName": "[concat(variables('vmName'), '-dsk')]",
         "publicIPAddressName": "[concat(variables('vmName'), '-pip')]",
