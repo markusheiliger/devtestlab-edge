@@ -203,6 +203,9 @@
             "type": "Microsoft.Compute/virtualMachines",
             "name": "[variables('vmName')]",
             "location": "[resourceGroup().location]",
+            "identity": { 
+                "type": "systemAssigned"
+            },
             "dependsOn": [
                 "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
             ],
