@@ -58,11 +58,6 @@
         "imageSKU": "7.3",
         "databaseServer": "[concat(variables('vmName'), '-sql')]",
         "databaseName": "artifactory",
-        "databaseVersion": "5.6",
-        "databaseDTU": 100,
-        "databaseSkuName": "MYSQLB100",
-        "databaseSkuTier": "Basic",
-        "databaseSkuSizeMB": 51200,
         "roleDefinition_Contributor": "[concat('/subscriptions/',subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
         "roleAssignment_Contributor": "[guid(resourceGroup().id, variables('virtualNetworkName'), deployment().name)]"
     },
