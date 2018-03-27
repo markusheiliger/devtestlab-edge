@@ -35,7 +35,7 @@ ARTIFACTORY_USER=artifactory
 ARTIFACTORY_PWD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 
 echo "### Configure storage ..." 2>&1
-sudo az storage share create --name artifactory --connection-string "DefaultEndpointsProtocol=https;AccountName=$6;AccountKey=$7;EndpointSuffix=core.windows.net"
+sudo az storage share create --name filestore --connection-string "DefaultEndpointsProtocol=https;AccountName=$6;AccountKey=$7;EndpointSuffix=core.windows.net"
 
 sudo mkdir /mnt/filestore
 echo "//$6.file.core.windows.net/filestore /mnt/filestore cifs nofail,vers=3.0,username=$6,password=$7,dir_mode=0777,file_mode=0777,serverino" | sudo tee -a /etc/fstab
