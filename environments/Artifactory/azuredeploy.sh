@@ -35,49 +35,21 @@ ARTIFACTORY_USER=artifactory
 ARTIFACTORY_PWD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 
 echo "### Configure storage ..." 2>&1
-sudo cp $ARTIFACTORY_HOME/etc/binarystore.xml $ARTIFACTORY_HOME/etc/binarystore.bak
-if [ -e $ARTIFACTORY_HOME/etc/artifactory.lic ] then
+sudo az storage share create --name artifactory --connection-string "DefaultEndpointsProtocol=https;AccountName=$6;AccountKey=$7;EndpointSuffix=core.windows.net"
 
-    ###
-    ### CREATE STORAGE CONFIGURATION FOR ARTIFACTORY ENTERPRISE VERSION
-    ###
-
-    sudo az storage container create --name artifactory --connection-string "DefaultEndpointsProtocol=https;AccountName=$6;AccountKey=$7;EndpointSuffix=core.windows.net"
-
-sudo tee $ARTIFACTORY_HOME/etc/binarystore.xml << END
-<config version="1">
-    <chain template="azure-blob-storage"/>
-    <provider id="azure-blob-storage" type="azure-blob-storage">
-        <accountName>$6</accountName>
-        <accountKey>$7</accountKey>
-        <endpoint>https://$6.blob.core.windows.net/</endpoint>
-        <containerName>artifactory</containerName>
-    </provider>
-</config>
-END
-
-else
-
-    ###
-    ### CREATE STORAGE CONFIGURATION FOR ARTIFACTORY OSS VERSION
-    ###
-
-    sudo mkdir /mnt/AzureFileShare
-    echo "//$6.file.core.windows.net/files /mnt/AzureFileShare cifs nofail,vers=3.0,username=$6,password=$7,dir_mode=0777,file_mode=0777,serverino" | sudo tee -a /etc/fstab
-    sudo mount --all
+sudo mkdir /mnt/filestore
+echo "//$6.file.core.windows.net/filestore /mnt/filestore cifs nofail,vers=3.0,username=$6,password=$7,dir_mode=0777,file_mode=0777,serverino" | sudo tee -a /etc/fstab
+sudo mount --all
     
-    sudo az storage share create --name artifactory --connection-string "DefaultEndpointsProtocol=https;AccountName=$6;AccountKey=$7;EndpointSuffix=core.windows.net"
-
+sudo cp $ARTIFACTORY_HOME/etc/binarystore.xml $ARTIFACTORY_HOME/etc/binarystore.bak
 sudo tee $ARTIFACTORY_HOME/etc/binarystore.xml << END
-<config version="v1">   
+<config version="1">   
     <chain template="file-system"/>
     <provider id="file-system" type="file-system">
-        <fileStoreDir>/mnt/AzureFileShare</fileStoreDir>
+        <fileStoreDir>/mnt/filestore</fileStoreDir>
     </provider>
 </config>
 END
-
-fi
 
 #echo "### Prepare MySQL SSL support ..." 2>&1
 #sudo curl https://www.digicert.com/CACerts/BaltimoreCyberTrustRoot.crt.pem --output $ARTIFACTORY_HOME/etc/BaltimoreCyberTrustRoot.pem
