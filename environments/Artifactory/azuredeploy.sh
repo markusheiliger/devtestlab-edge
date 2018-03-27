@@ -51,23 +51,23 @@ sudo tee $ARTIFACTORY_HOME/etc/binarystore.xml << END
 </config>
 END
 
-echo "### Prepare MySQL SSL support ..." 2>&1
-sudo curl -s https://www.digicert.com/CACerts/BaltimoreCyberTrustRoot.crt.pem --output $ARTIFACTORY_HOME/etc/BaltimoreCyberTrustRoot.pem
+# echo "### Prepare MySQL SSL support ..." 2>&1
+# sudo curl -s https://www.digicert.com/CACerts/BaltimoreCyberTrustRoot.crt.pem --output $ARTIFACTORY_HOME/etc/BaltimoreCyberTrustRoot.pem
 
-mysql --ssl-ca=$ARTIFACTORY_HOME/etc/BaltimoreCyberTrustRoot.pem -h "$4.mysql.database.azure.com" -u "$2@$4" -p$3 -D $5 \
-      -e "GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,DROP,ALTER,INDEX on artifactory.* TO 'artifactory'@'$ARTIFACTORY_PWD' IDENTIFIED BY '$';"
+# mysql --ssl-ca=$ARTIFACTORY_HOME/etc/BaltimoreCyberTrustRoot.pem -h "$4.mysql.database.azure.com" -u "$2@$4" -p$3 -D $5 \
+#       -e "GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,DROP,ALTER,INDEX on artifactory.* TO 'artifactory'@'$ARTIFACTORY_PWD' IDENTIFIED BY '$';"
 
-echo "### Installing JDBC driver for MySQL ..." 2>&1
-sudo wget -nv --timeout=30 -O /opt/jfrog/artifactory/tomcat/lib/mysql-connector-java-5.1.24.jar http://repo.jfrog.org/artifactory/remote-repos/mysql/mysql-connector-java/5.1.24/mysql-connector-java-5.1.24.jar 2>&1
+# echo "### Installing JDBC driver for MySQL ..." 2>&1
+# sudo wget -nv --timeout=30 -O /opt/jfrog/artifactory/tomcat/lib/mysql-connector-java-5.1.24.jar http://repo.jfrog.org/artifactory/remote-repos/mysql/mysql-connector-java/5.1.24/mysql-connector-java-5.1.24.jar 2>&1
 
-echo "### Configure JDBC driver ..." 2>&1
-sudo tee $ARTIFACTORY_HOME/etc/storage.properties << END
-type=mysql
-driver=com.mysql.jdbc.Driver
-url=mysql://$4.mysql.database.azure.com/$5?characterEncoding=UTF-8&elideSetAutoCommits=true
-username=$ARTIFACTORY_USER
-password=$ARTIFACTORY_PWD
-END
+# echo "### Configure JDBC driver ..." 2>&1
+# sudo tee $ARTIFACTORY_HOME/etc/storage.properties << END
+# type=mysql
+# driver=com.mysql.jdbc.Driver
+# url=mysql://$4.mysql.database.azure.com/$5?characterEncoding=UTF-8&elideSetAutoCommits=true
+# username=$ARTIFACTORY_USER
+# password=$ARTIFACTORY_PWD
+# END
 
 echo "### Starting artifactory as service ..." 2>&1
 sudo service artifactory start
