@@ -36,6 +36,7 @@ ARTIFACTORY_PWD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
 
 echo "### Configure storage ..." 2>&1
 sudo az storage container create --name artifactory --connection-string "DefaultEndpointsProtocol=https;AccountName=$6;AccountKey=$7;EndpointSuffix=core.windows.net"
+sudo cp $ARTIFACTORY_HOME/etc/binarystore.xml $ARTIFACTORY_HOME/etc/binarystore.bak
 sudo tee $ARTIFACTORY_HOME/etc/binarystore.xml << END
 <config version="1">
     <chain template="azure-blob-storage"/>
