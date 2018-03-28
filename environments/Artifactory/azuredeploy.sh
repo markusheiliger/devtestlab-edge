@@ -33,6 +33,9 @@ sudo ln -s /etc/opt/jfrog/artifactory/ /opt/app/artifactory
 ARTIFACTORY_HOME=/var/opt/jfrog/artifactory
 ARTIFACTORY_USER=artifactory
 ARTIFACTORY_PWD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+#ARTIFACTORY_JDBC_URL=https://download.microsoft.com/download/0/2/A/02AAE597-3865-456C-AE7F-613F99F850A8/sqljdbc_6.0.8112.200_enu.tar.gz
+ARTIFACTORY_JDBC_URL=https://download.microsoft.com/download/F/0/F/F0FF3F95-D42A-46AF-B0F9-8887987A2C4B/sqljdbc_4.2.8112.200_enu.tar.gz
+
 
 echo "### Configure storage ..." 2>&1
 sudo az storage share create --name filestore --connection-string "DefaultEndpointsProtocol=https;AccountName=$6;AccountKey=$7;EndpointSuffix=core.windows.net"
@@ -51,13 +54,16 @@ sudo tee $ARTIFACTORY_HOME/etc/binarystore.xml << END
 </config>
 END
 
-sudo tee $ARTIFACTORY_HOME/etc/db.properties << END
-type=mssql
-driver=com.microsoft.sqlserver.jdbc.SQLServerDriver
-url=jdbc:sqlserver://$4.database.windows.net:1433;database=$5;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;sendStringParametersAsUnicode=false;applicationName=Artifactory Binary Repository
-username=$2
-password=$3
-END
+echo "### Configure database ..." 2>&1
+sudo wget -qO- $ARTIFACTORY_JDBC_URL | tar xvz -C $ARTIFACTORY_HOME/etc
+
+# sudo tee $ARTIFACTORY_HOME/etc/db.properties << END
+# type=mssql
+# driver=com.microsoft.sqlserver.jdbc.SQLServerDriver
+# url=jdbc:sqlserver://$4.database.windows.net:1433;database=$5;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;sendStringParametersAsUnicode=false;applicationName=Artifactory Binary Repository
+# username=$2
+# password=$3
+# END
 
 echo "### Starting artifactory as service ..." 2>&1
 sudo service artifactory start
