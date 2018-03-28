@@ -55,7 +55,7 @@
         "nicName": "[concat(variables('resourcePrefix'), '-nic')]",
         "vNetAddressPrefixes": "192.168.42.0/24",
         "sNetAddressPrefixes_artifactory": "192.168.42.0/25",
-        "sNetAddressPrefixes_gateway": "192.168.42.200/25",
+        "sNetAddressPrefixes_gateway": "192.168.42.128/25",
         "imagePublisher": "redhat",
         "imageOffer": "rhel",
         "imageSKU": "7.3",
