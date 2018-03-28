@@ -49,7 +49,7 @@
         "storageAccountType": "Standard_LRS",
         "osDiskName": "[concat(variables('resourcePrefix'), '-dsk')]",
         "publicIPAddressName": "[concat(variables('resourcePrefix'), '-pip')]",
-        "publicIPAddressDNS": "[uniqueString(resourceGroup().id)]",
+        "publicIPAddressDNS": "[variables('resourcePrefix')]",
         "virtualNetworkName": "[concat(variables('resourcePrefix'), '-vnet')]",
         "networkSecurityGroupName": "[concat(variables('resourcePrefix'), '-nsg')]",
         "nicName": "[concat(variables('resourcePrefix'), '-nic')]",
