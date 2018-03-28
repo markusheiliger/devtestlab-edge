@@ -11,9 +11,10 @@
 echo "Import the Microsoft repository key and create repository info ..."  2>&1
 sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
 echo -e "[azure-cli]\nname=Azure CLI\nbaseurl=https://packages.microsoft.com/yumrepos/azure-cli\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc"  | sudo tee /etc/yum.repos.d/azure-cli.repo
+sudo curl -s https://packages.microsoft.com/config/rhel/7/prod.repo > /etc/yum.repos.d/msprod.repo
 
 echo "### Installing packages ..." 2>&1
-sudo yum install -y java-1.8.0-openjdk samba-client samba-common cifs-utils azure-cli mysql
+sudo ACCEPT_EULA=Y yum install -y java-1.8.0-openjdk samba-client samba-common cifs-utils azure-cli mssql-tools unixODBC-devel
 
 echo "### Login Azure CLI ..." 2>&1
 sudo az login --msi
@@ -30,12 +31,12 @@ echo "### Creating artifactory app folder ..." 2>&1
 sudo mkdir /opt/app
 sudo ln -s /etc/opt/jfrog/artifactory/ /opt/app/artifactory
 
+SQLCMD_HOME=/opt/mssql-tools/bin
 ARTIFACTORY_HOME=/var/opt/jfrog/artifactory
 ARTIFACTORY_USER=artifactory
 ARTIFACTORY_PWD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 ARTIFACTORY_JDBC_URL=https://download.microsoft.com/download/0/2/A/02AAE597-3865-456C-AE7F-613F99F850A8/sqljdbc_6.0.8112.200_enu.tar.gz
 #ARTIFACTORY_JDBC_URL=https://download.microsoft.com/download/F/0/F/F0FF3F95-D42A-46AF-B0F9-8887987A2C4B/sqljdbc_4.2.8112.200_enu.tar.gz
-
 
 echo "### Configure storage ..." 2>&1
 sudo az storage share create --name filestore --connection-string "DefaultEndpointsProtocol=https;AccountName=$6;AccountKey=$7;EndpointSuffix=core.windows.net"
@@ -62,9 +63,13 @@ sudo tee $ARTIFACTORY_HOME/etc/db.properties << END
 type=mssql
 driver=com.microsoft.sqlserver.jdbc.SQLServerDriver
 url=jdbc:sqlserver://$4.database.windows.net:1433;database=$5;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;sendStringParametersAsUnicode=false;
-username=$2
-password=$3
+username=$ARTIFACTORY_USER
+password=$ARTIFACTORY_PWD
 END
+
+echo "### Grant database access ..." 2>&1
+$SQLCMD_HOME/sqlcmd -S tcp:$4.database.windows.net,1433 -d master -U $2 -P $3 -Q "CREATE LOGIN $ARTIFACTORY_USER WITH PASSWORD='$ARTIFACTORY_PWD';"
+$SQLCMD_HOME/sqlcmd -S tcp:$4.database.windows.net,1433 -d $5 -U $2 -P $3     -Q "CREATE USER $ARTIFACTORY_USER FROM LOGIN $ARTIFACTORY_USER; exec sp_addrolemember 'db_owner', '$5';"
 
 echo "### Starting artifactory as service ..." 2>&1
 sudo service artifactory start
