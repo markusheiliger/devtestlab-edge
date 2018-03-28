@@ -345,21 +345,6 @@
                         "startIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName')), providers('Microsoft.Network', 'publicIPAddresses').apiVersions[0]).ipAddress]",
                         "endIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName')), providers('Microsoft.Network', 'publicIPAddresses').apiVersions[0]).ipAddress]"
                     }
-                },
-                {
-                    "type": "virtualNetworkRules",
-                    "name": "ArtifactoryVNet",
-                    "apiVersion": "2015-05-01-preview",
-                    "location": "[resourceGroup().location]",
-                    "dependsOn": [
-                        "[resourceId('Microsoft.Sql/servers', variables('databaseServer'))]",
-                        "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
-                        "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), 'artifactory')]"
-                    ],
-                    "properties": {
-                        "virtualNetworkSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), 'artifactory')]",
-                        "ignoreMissingVnetServiceEndpoint": true
-                    }
                 }
             ]
         }
