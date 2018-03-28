@@ -54,7 +54,8 @@
         "networkSecurityGroupName": "[concat(variables('resourcePrefix'), '-nsg')]",
         "nicName": "[concat(variables('resourcePrefix'), '-nic')]",
         "vNetAddressPrefixes": "192.168.0.0/16",
-        "sNetAddressPrefixes": "192.168.0.0/16",
+        "sNetAddressPrefixes_artifactory": "192.168.1.0/24",
+        "sNetAddressPrefixes_gateway": "192.168.2.0/24",
         "imagePublisher": "redhat",
         "imageOffer": "rhel",
         "imageSKU": "7.3",
@@ -157,7 +158,16 @@
                     {
                         "name": "artifactory",
                         "properties": {
-                            "addressPrefix": "[variables('sNetAddressPrefixes')]",
+                            "addressPrefix": "[variables('sNetAddressPrefixes_artifactory')]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "gateway",
+                        "properties": {
+                            "addressPrefix": "[variables('sNetAddressPrefixes_gateway')]",
                             "networkSecurityGroup": {
                                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
                             }
@@ -200,7 +210,7 @@
             "type": "Microsoft.Compute/virtualMachines",
             "name": "[variables('vmName')]",
             "location": "[resourceGroup().location]",
-            "identity": { 
+            "identity": {
                 "type": "systemAssigned"
             },
             "dependsOn": [
@@ -298,46 +308,60 @@
         {
             "type": "Microsoft.Sql/servers",
             "name": "[variables('databaseServer')]",
-            "dependsOn": [ ],
+            "dependsOn": [],
             "location": "[resourceGroup().location]",
             "apiVersion": "2015-05-01-preview",
             "properties": {
-              "administratorLogin": "[parameters('adminUsername')]",
-              "administratorLoginPassword": "[parameters('adminPassword')]",
-              "version": "12.0"
+                "administratorLogin": "[parameters('adminUsername')]",
+                "administratorLoginPassword": "[parameters('adminPassword')]",
+                "version": "12.0"
             },
             "resources": [
-              {
-                "type": "databases",
-                "name": "[variables('databaseName')]",
-                "location": "[resourceGroup().location]",
-                "apiVersion": "2015-01-01",
-                "dependsOn": [
-                    "[resourceId('Microsoft.Sql/servers', variables('databaseServer'))]"
-                ],
-                "properties": {
-                  "edition": "Basic",
-                  "collation": "Latin1_General_CS_AI",
-                  "maxSizeBytes": "1073741824",
-                  "requestedServiceObjectiveName": "Basic"
+                {
+                    "type": "databases",
+                    "name": "[variables('databaseName')]",
+                    "location": "[resourceGroup().location]",
+                    "apiVersion": "2015-01-01",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Sql/servers', variables('databaseServer'))]"
+                    ],
+                    "properties": {
+                        "edition": "Basic",
+                        "collation": "Latin1_General_CS_AI",
+                        "maxSizeBytes": "1073741824",
+                        "requestedServiceObjectiveName": "Basic"
+                    }
+                },
+                {
+                    "type": "firewallrules",
+                    "name": "AllowAccess",
+                    "location": "[resourceGroup().location]",
+                    "apiVersion": "2014-04-01",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Sql/servers', variables('databaseServer'))]",
+                        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+                    ],
+                    "properties": {
+                        "startIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName')), providers('Microsoft.Network', 'publicIPAddresses').apiVersions[0]).ipAddress]",
+                        "endIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName')), providers('Microsoft.Network', 'publicIPAddresses').apiVersions[0]).ipAddress]"
+                    }
+                },
+                {
+                    "type": "virtualNetworkRules",
+                    "name": "ArtifactoryVNet",
+                    "apiVersion": "2015-05-01-preview",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Sql/servers', variables('databaseServer'))]",
+                        "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), 'artifactory')]"
+                    ],
+                    "properties": {
+                        "virtualNetworkSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), 'artifactory')]",
+                        "ignoreMissingVnetServiceEndpoint": true
+                    }
                 }
-              },
-              {
-                "type": "firewallrules",
-                "name": "AllowAllAzureIps",
-                "location": "[resourceGroup().location]",
-                "apiVersion": "2014-04-01",
-                "dependsOn": [
-                  "[resourceId('Microsoft.Sql/servers', variables('databaseServer'))]",
-                  "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
-                ],
-                "properties": {
-                    "startIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName')), providers('Microsoft.Network', 'publicIPAddresses').apiVersions[0]).ipAddress]",
-                    "endIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName')), providers('Microsoft.Network', 'publicIPAddresses').apiVersions[0]).ipAddress]"
-            }
-              }
             ]
-          }
+        }
     ],
     "outputs": {}
 }
