@@ -43,20 +43,22 @@
         }
     },
     "variables": {
-        "vmName": "[concat('artifactory', uniqueString(resourceGroup().id))]",
-        "storageAccountName": "[variables('vmName')]",
+        "resourcePrefix": "[concat('artifactory', uniqueString(resourceGroup().id))]",
+        "vmName": "[concat(variables('resourcePrefix'), '-vm')]",
+        "storageAccountName": "[variables('resourcePrefix')]",
         "storageAccountType": "Standard_LRS",
-        "osDiskName": "[concat(variables('vmName'), '-dsk')]",
-        "publicIPAddressName": "[concat(variables('vmName'), '-pip')]",
-        "virtualNetworkName": "[concat(variables('vmName'), '-vnet')]",
-        "networkSecurityGroupName": "[concat(variables('vmName'), '-nsg')]",
-        "nicName": "[concat(variables('vmName'), '-nic')]",
+        "osDiskName": "[concat(variables('resourcePrefix'), '-dsk')]",
+        "publicIPAddressName": "[concat(variables('resourcePrefix'), '-pip')]",
+        "publicIPAddressDNS": "[uniqueString(resourceGroup().id)]",
+        "virtualNetworkName": "[concat(variables('resourcePrefix'), '-vnet')]",
+        "networkSecurityGroupName": "[concat(variables('resourcePrefix'), '-nsg')]",
+        "nicName": "[concat(variables('resourcePrefix'), '-nic')]",
         "vNetAddressPrefixes": "192.168.0.0/16",
         "sNetAddressPrefixes": "192.168.0.0/16",
         "imagePublisher": "redhat",
         "imageOffer": "rhel",
         "imageSKU": "7.3",
-        "databaseServer": "[concat(variables('vmName'), '-sql')]",
+        "databaseServer": "[concat(variables('resourcePrefix'), '-sql')]",
         "databaseName": "artifactory",
         "roleDefinition_Contributor": "[concat('/subscriptions/',subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
         "roleAssignment_Contributor": "[guid(resourceGroup().id, variables('virtualNetworkName'), deployment().name)]"
@@ -95,7 +97,7 @@
             "properties": {
                 "publicIPAllocationMethod": "Static",
                 "dnsSettings": {
-                    "domainNameLabel": "[variables('vmName')]"
+                    "domainNameLabel": "[variables('publicIPAddressDNS')]"
                 }
             }
         },
