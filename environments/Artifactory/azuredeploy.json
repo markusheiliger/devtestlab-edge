@@ -53,9 +53,9 @@
         "virtualNetworkName": "[concat(variables('resourcePrefix'), '-vnet')]",
         "networkSecurityGroupName": "[concat(variables('resourcePrefix'), '-nsg')]",
         "nicName": "[concat(variables('resourcePrefix'), '-nic')]",
-        "vNetAddressPrefixes": "192.168.0.0/16",
-        "sNetAddressPrefixes_artifactory": "192.168.1.0/24",
-        "sNetAddressPrefixes_gateway": "192.168.2.0/24",
+        "vNetAddressPrefixes": "192.168.42.0/24",
+        "sNetAddressPrefixes_artifactory": "192.168.42.0/25",
+        "sNetAddressPrefixes_gateway": "192.168.42.200/25",
         "imagePublisher": "redhat",
         "imageOffer": "rhel",
         "imageSKU": "7.3",
@@ -353,6 +353,7 @@
                     "location": "[resourceGroup().location]",
                     "dependsOn": [
                         "[resourceId('Microsoft.Sql/servers', variables('databaseServer'))]",
+                        "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
                         "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), 'artifactory')]"
                     ],
                     "properties": {
