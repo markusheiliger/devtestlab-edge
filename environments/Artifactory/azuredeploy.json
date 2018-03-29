@@ -440,6 +440,14 @@
                             "Protocol": "Http",
                             "CookieBasedAffinity": "Disabled"
                         }
+                    },
+                    {
+                        "name": "appGatewayBackendHttpsSettings",
+                        "properties": {
+                            "Port": 443,
+                            "Protocol": "Https",
+                            "CookieBasedAffinity": "Disabled"
+                        }
                     }
                 ],
                 "httpListeners": [
@@ -472,6 +480,38 @@
                         }
                     }
                 ],
+                "requestRoutingRules": [
+                    {
+                      "Name": "HTTPRule",
+                      "properties": {
+                        "RuleType": "Basic",
+                        "httpListener": {
+                          "id": "[concat(variables('applicationGatewayID'), '/httpListeners/appGatewayHttpListener')]"
+                        },
+                        "backendAddressPool": {
+                          "id": "[concat(variables('applicationGatewayID'), '/backendAddressPools/appGatewayBackendPool')]"
+                        },
+                        "backendHttpSettings": {
+                          "id": "[concat(variables('applicationGatewayID'), '/backendHttpSettingsCollection/appGatewayBackendHttpSettings')]"
+                        }
+                      }
+                    },
+                    {
+                      "Name": "HTTPSRule",
+                      "properties": {
+                        "RuleType": "Basic",
+                        "httpListener": {
+                          "id": "[concat(variables('applicationGatewayID'), '/httpListeners/appGatewayHttpsListener')]"
+                        },
+                        "backendAddressPool": {
+                          "id": "[concat(variables('applicationGatewayID'), '/backendAddressPools/appGatewayBackendPool')]"
+                        },
+                        "backendHttpSettings": {
+                          "id": "[concat(variables('applicationGatewayID'), '/backendHttpSettingsCollection/appGatewayBackendHttpsSettings')]"
+                        }
+                      }
+                    }
+                  ],
                 "webApplicationFirewallConfiguration": {
                     "enabled": "true",
                     "firewallMode": "Prevention",
