@@ -355,8 +355,8 @@
                         "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
                     ],
                     "properties": {
-                        "startIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName')), providers('Microsoft.Network', 'publicIPAddresses').apiVersions[0]).ipAddress]",
-                        "endIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName')), providers('Microsoft.Network', 'publicIPAddresses').apiVersions[0]).ipAddress]"
+                        "startIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))).ipAddress]",
+                        "endIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))).ipAddress]"
                     }
                 }
             ]
