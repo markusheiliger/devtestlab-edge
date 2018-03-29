@@ -144,7 +144,7 @@
             }
         },
         {
-            "apiVersion": "2016-09-01",
+            "apiVersion": "2018-01-01",
             "type": "Microsoft.Network/virtualNetworks",
             "name": "[variables('virtualNetworkName')]",
             "location": "[resourceGroup().location]",
@@ -161,7 +161,15 @@
                             "addressPrefix": "[variables('sNetAddressPrefixes_artifactory')]",
                             "networkSecurityGroup": {
                                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
-                            }
+                            },
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.Sql",
+                                    "locations": [
+                                        "[resourceGroup().location]"
+                                    ]
+                                }
+                            ]
                         }
                     },
                     {
@@ -358,7 +366,7 @@
                     ],
                     "properties": {
                         "virtualNetworkSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), 'artifactory')]",
-                        "ignoreMissingVnetServiceEndpoint": true
+                        "ignoreMissingVnetServiceEndpoint": false
                     }
                 }
             ]
