@@ -432,6 +432,16 @@
                         }
                     }
                 ],
+                "backendHttpSettingsCollection": [
+                    {
+                        "name": "appGatewayBackendHttpSettings",
+                        "properties": {
+                            "Port": 80,
+                            "Protocol": "Http",
+                            "CookieBasedAffinity": "Disabled"
+                        }
+                    }
+                ],
                 "httpListeners": [
                     {
                         "name": "appGatewayHttpListener",
