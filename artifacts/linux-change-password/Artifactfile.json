@@ -16,18 +16,38 @@
             "type": "securestring",
             "displayName": "Password",
             "description": "New password for the user name"
+        },
+        "resetSSH": {
+            "type": "bool",
+            "defaultValue": false,
+            "allowedValues": [
+                true,
+                false
+            ],
+            "metadata": {
+                "description": "Whether to reset ssh"
+            }
+        },
+        "sshKey": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "The new public key"
+            }
         }
     },
     "runAzureVMExtension": {
-        "publisher": "Microsoft.Compute",
-        "type": "VMAccessAgent",
-        "typeHandlerVersion": "2.0",
+        "publisher": "Microsoft.OSTCExtensions",
+        "type": "VMAccessForLinux",
+        "typeHandlerVersion": "1.4",
         "autoUpgradeMinorVersion": true,
         "settings": {
             "UserName": "[parameters('userName')]"
         },
         "protectedSettings": {
-            "Password": "[parameters('password')]"
+            "password": "[parameters('password')]",
+            "reset_ssh": "[parameters('resetSSH')]",
+            "ssh_key": "[parameters('sshKey')]"
         }
     }
 }
