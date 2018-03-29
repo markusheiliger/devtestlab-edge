@@ -17,6 +17,17 @@
             "metadata": {
                 "description": "The new public key"
             }
+        },
+        "sshReset": {
+            "type": "bool",
+            "defaultValue": false,
+            "allowedValues": [
+                true,
+                false
+            ],
+            "metadata" : {
+                "description":"Whether or not reset the ssh."
+            }
         }
     },
     "runAzureVMExtension": {
@@ -24,12 +35,10 @@
         "type": "VMAccessForLinux",
         "typeHandlerVersion": "1.4",
         "autoUpgradeMinorVersion": true,
-        "settings": {
-            "UserName": "[parameters('userName')]"
-        },
         "protectedSettings": {
+            "username": "[parameters('userName')]",
             "ssh_key": "[parameters('sshKey')]",
-            "reset_ssh": true
+            "reset_ssh": "[parameters('sshReset')]"
         }
     }
 }

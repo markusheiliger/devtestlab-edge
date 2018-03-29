@@ -23,12 +23,9 @@
         "type": "VMAccessForLinux",
         "typeHandlerVersion": "1.4",
         "autoUpgradeMinorVersion": true,
-        "settings": {
-            "UserName": "[parameters('userName')]"
-        },
         "protectedSettings": {
-            "password": "[parameters('password')]",
-            "reset_ssh": false
+            "username": "[parameters('userName')]",
+            "password": "[parameters('password')]"
         }
     }
 }
