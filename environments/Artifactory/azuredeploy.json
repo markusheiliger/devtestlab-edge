@@ -361,8 +361,7 @@
                     "location": "[resourceGroup().location]",
                     "dependsOn": [
                         "[resourceId('Microsoft.Sql/servers', variables('databaseServer'))]",
-                        "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
-                        "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), 'artifactory')]"
+                        "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]"
                     ],
                     "properties": {
                         "virtualNetworkSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), 'artifactory')]",
