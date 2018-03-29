@@ -113,7 +113,7 @@
             "name": "[variables('publicIPAddressName')]",
             "location": "[resourceGroup().location]",
             "properties": {
-                "publicIPAllocationMethod": "Static",
+                "publicIPAllocationMethod": "Dynamic",
                 "dnsSettings": {
                     "domainNameLabel": "[variables('publicIPAddressDNS')]"
                 }
