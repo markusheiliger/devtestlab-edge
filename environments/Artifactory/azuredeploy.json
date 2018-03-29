@@ -367,9 +367,9 @@
             "type": "Microsoft.Network/applicationGateways",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]",
-                "[resourceId('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]",
-                "[resourceId('Microsoft.Network/networkInterfaces', variables('publicIPAddressName'))]"
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]",
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
             ],
             "properties": {
                 "sku": {
@@ -426,7 +426,7 @@
                         "properties": {
                             "BackendAddresses": [
                                 {
-                                    "IpAddress": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('publicIPAddressName')), '2016-09-01').ipConfigurations[0].properties.privateIPAddress]"
+                                    "IpAddress": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('nicName')), '2016-09-01').ipConfigurations[0].properties.privateIPAddress]"
                                 }
                             ]
                         }
