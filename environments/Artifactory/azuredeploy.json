@@ -1,0 +1,391 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "adminUsername": {
+            "type": "string",
+            "minLength": 3,
+            "metadata": {
+                "description": "The admin username."
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The admin password."
+            }
+        },
+        "adminPublicKey": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Certificate public key used to authenticate with VMs through SSH. The certificate must be in PEM format with or without headers."
+            }
+        },
+        "artifactoryAdminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Set the admin password for artifactory."
+            }
+        },
+        "artifactoryLicenseKey": {
+            "type": "string",
+            "metadata": {
+                "description": "Set the artifactory license key."
+            }
+        },
+        "customDomainName": {
+            "type": "string",
+            "metadata": {
+                "description": "Custom domain name for the service."
+            }
+        },
+        "customDomainCertificateCrt": {
+            "type": "string",
+            "metadata": {
+                "description": "Base-64 encoded crt file."
+            }
+        },
+        "customDomainCertificateKey": {
+            "type": "string",
+            "metadata": {
+                "description": "Base-64 encoded key file."
+            }
+        },
+        "_artifactsLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "The base URI where artifacts required by this template are located. When the template is deployed using the accompanying scripts, a private location in the subscription will be used and this value will be automatically generated."
+            },
+            "defaultValue": "https://raw.githubusercontent.com/markusheiliger/devtestlab-edge/master/environments/ACS-Kubernetes"
+        },
+        "_artifactsLocationSasToken": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The sasToken required to access _artifactsLocation.  When the template is deployed using the accompanying scripts, a sasToken will be automatically generated."
+            },
+            "defaultValue": ""
+        }
+    },
+    "variables": {
+        "resourcePrefix": "[concat('artifactory', uniqueString(resourceGroup().id))]",
+        "vmName": "[concat(variables('resourcePrefix'), '-vm')]",
+        "storageAccountName": "[variables('resourcePrefix')]",
+        "storageAccountType": "Standard_LRS",
+        "osDiskName": "[concat(variables('resourcePrefix'), '-dsk')]",
+        "publicIPAddressName": "[concat(variables('resourcePrefix'), '-pip')]",
+        "publicIPAddressDNS": "[concat(variables('resourcePrefix'), '')]",
+        "virtualNetworkName": "[concat(variables('resourcePrefix'), '-vnet')]",
+        "networkSecurityGroupName": "[concat(variables('resourcePrefix'), '-nsg')]",
+        "nicName": "[concat(variables('resourcePrefix'), '-nic')]",
+        "vNetAddressPrefixes": "192.168.42.0/24",
+        "sNetAddressPrefixes_artifactory": "192.168.42.0/25",
+        "sNetAddressPrefixes_gateway": "192.168.42.128/25",
+        "imagePublisher": "redhat",
+        "imageOffer": "rhel",
+        "imageSKU": "7.3",
+        "databaseServer": "[concat(variables('resourcePrefix'), '-sql')]",
+        "databaseName": "artifactory",
+        "applicationGatewayID": "[resourceId('Microsoft.Network/applicationGateways', variables('applicationGatewayName'))]",
+        "applicationGatewayName": "[concat(variables('resourcePrefix'), '-agw')]",
+        "applicationGatewaySku": "WAF_Medium",
+        "applicationGatewayTier": "WAF",
+        "applicationGatewayCapacity": 2,
+        "roleDefinition_Contributor": "[concat('/subscriptions/',subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+        "roleAssignment_Contributor": "[guid(resourceGroup().id, variables('virtualNetworkName'), deployment().name)]",
+        "artifactory_port": "[if(equals(parameters('artifactoryLicenseKey'), ''), 8081, 443)]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('storageAccountName')]",
+            "apiVersion": "2017-10-01",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[variables('storageAccountType')]"
+            },
+            "kind": "Storage",
+            "properties": {}
+        },
+        {
+            "name": "[concat(variables('storageAccountName'), '/Microsoft.Authorization/', variables('roleAssignment_Contributor'))]",
+            "type": "Microsoft.Storage/storageAccounts/providers/roleAssignments",
+            "apiVersion": "2015-07-01",
+            "properties": {
+                "roleDefinitionId": "[variables('roleDefinition_Contributor')]",
+                "principalId": "[reference(concat(resourceId('Microsoft.Compute/virtualMachines', variables('vmName')),'/providers/Microsoft.ManagedIdentity/Identities/default'),'2015-08-31-PREVIEW').principalId]",
+                "scope": "[resourceId(subscription().subscriptionId, resourceGroup().name, 'Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+                "[resourceId('Microsoft.Compute/virtualMachines/extensions', variables('vmName'), 'ManagedIdentity')]"
+            ]
+        },
+        {
+            "apiVersion": "2016-09-01",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[variables('publicIPAddressName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[variables('publicIPAddressDNS')]"
+                }
+            }
+        },
+        {
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[variables('networkSecurityGroupName')]",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "NSG - Front End"
+            },
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "ssh-rule",
+                        "properties": {
+                            "description": "Allow SSH",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "22",
+                            "sourceAddressPrefix": "Internet",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "artifactory-rule",
+                        "properties": {
+                            "description": "Allow Artifactory",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "[variables('artifactory_port')]",
+                            "sourceAddressPrefix": "Internet",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 110,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2018-01-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[variables('virtualNetworkName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('vNetAddressPrefixes')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "artifactory",
+                        "properties": {
+                            "addressPrefix": "[variables('sNetAddressPrefixes_artifactory')]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
+                            },
+                            "serviceEndpoints": [
+                                {
+                                  "service": "Microsoft.Sql",
+                                  "locations": [
+                                    "[resourceGroup().location]"
+                                  ]
+                                }
+                              ]
+                        }
+                    },
+                    {
+                        "name": "gateway",
+                        "properties": {
+                            "addressPrefix": "[variables('sNetAddressPrefixes_gateway')]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
+                            }
+                        }
+                    }
+                ]
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
+            ]
+        },
+        {
+            "apiVersion": "2016-09-01",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[variables('nicName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), 'artifactory')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2017-03-30",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[variables('vmName')]",
+            "location": "[resourceGroup().location]",
+            "identity": {
+                "type": "systemAssigned"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_D2_v2"
+                },
+                "osProfile": {
+                    "computerName": "[variables('vmName')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "linuxConfiguration": {
+                        "disablePasswordAuthentication": true,
+                        "ssh": {
+                            "publicKeys": [
+                                {
+                                    "path": "[concat('/home/',parameters('adminUsername'),'/.ssh/authorized_keys')]",
+                                    "keyData": "[parameters('adminPublicKey')]"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[variables('imagePublisher')]",
+                        "offer": "[variables('imageOffer')]",
+                        "sku": "[variables('imageSKU')]",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "[variables('osDiskName')]",
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "Standard_LRS"
+                        }
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+                        }
+                    ]
+                }
+            },
+            "resources": [
+                {
+                    "type": "extensions",
+                    "name": "ManagedIdentity",
+                    "apiVersion": "2016-03-30",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+                    ],
+                    "properties": {
+                        "publisher": "Microsoft.ManagedIdentity",
+                        "type": "ManagedIdentityExtensionForLinux",
+                        "typeHandlerVersion": "1.0",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "port": 50342
+                        },
+                        "protectedSettings": {}
+                    }
+                },
+                {
+                    "type": "extensions",
+                    "name": "Initialize",
+                    "apiVersion": "2015-06-15",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]",
+                        "[resourceId('Microsoft.Compute/virtualMachines/extensions', variables('vmName'), 'ManagedIdentity')]",
+                        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+                        "[resourceId('Microsoft.Sql/servers/databases', variables('databaseServer'), variables('databaseName'))]"
+                    ],
+                    "properties": {
+                        "publisher": "Microsoft.Azure.Extensions",
+                        "type": "CustomScript",
+                        "typeHandlerVersion": "2.0",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "fileUris": [
+                                "[concat(parameters('_artifactsLocation'), '/azuredeploy.sh', parameters('_artifactsLocationSasToken'))]",
+                                "[concat(parameters('_artifactsLocation'), '/azuredeploy.nginx', parameters('_artifactsLocationSasToken'))]"
+                            ],
+                            "commandToExecute": "[concat('find ./ -type f -name azuredeploy.sh -exec sh \"{}\" \"', parameters('artifactoryAdminPassword') ,'\" \"', parameters('adminUsername') ,'\" \"', parameters('adminPassword') ,'\" \"', variables('databaseServer') ,'\" \"', variables('databaseName'),'\" \"', variables('storageAccountName'),'\" \"', listKeys(variables('storageAccountName'),'2017-10-01').keys[0].value,'\" \"', parameters('artifactoryLicenseKey'),'\" \"', parameters('customDomainName'),'\" \"', parameters('customDomainCertificateCrt'),'\" \"', parameters('customDomainCertificateKey'), '\" \\;')]"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Sql/servers",
+            "name": "[variables('databaseServer')]",
+            "dependsOn": [],
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-05-01-preview",
+            "properties": {
+                "administratorLogin": "[parameters('adminUsername')]",
+                "administratorLoginPassword": "[parameters('adminPassword')]",
+                "version": "12.0"
+            },
+            "resources": [
+                {
+                    "type": "databases",
+                    "name": "[variables('databaseName')]",
+                    "location": "[resourceGroup().location]",
+                    "apiVersion": "2015-01-01",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Sql/servers', variables('databaseServer'))]"
+                    ],
+                    "properties": {
+                        "edition": "Basic",
+                        "collation": "Latin1_General_CS_AI",
+                        "maxSizeBytes": "1073741824",
+                        "requestedServiceObjectiveName": "Basic"
+                    }
+                },
+                {
+                    "type": "virtualNetworkRules",
+                    "name": "artifactory",
+                    "location": "[resourceGroup().location]",
+                    "apiVersion": "2015-05-01-preview",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Sql/servers', variables('databaseServer'))]",
+                        "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]"
+                    ],
+                    "properties" :{
+                        "virtualNetworkSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), 'artifactory')]",
+                        "ignoreMissingVnetServiceEndpoint": true
+                    }   
+                }
+            ]
+        }
+    ],
+    "outputs": {}
+}
