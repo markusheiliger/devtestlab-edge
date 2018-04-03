@@ -27,16 +27,28 @@
                 "description": "Set the admin password for artifactory."
             }
         },
-        "frontendCertData": {
+        "artifactoryLicenseKey": {
             "type": "string",
             "metadata": {
-                "description": "Base-64 encoded form of the .pfx file. This is the cert terminating on the Application Gateway."
+                "description": "Set the artifactory license key."
             }
         },
-        "frontendCertPassword": {
-            "type": "securestring",
+        "customDomainName": {
+            "type": "string",
             "metadata": {
-                "description": "Password for .pfx certificate"
+                "description": "Custom domain name for the service."
+            }
+        },
+        "customDomainCertificateCrt": {
+            "type": "string",
+            "metadata": {
+                "description": "Base-64 encoded crt file."
+            }
+        },
+        "customDomainCertificateKey": {
+            "type": "string",
+            "metadata": {
+                "description": "Base-64 encoded key file."
             }
         },
         "_artifactsLocation": {
@@ -61,7 +73,7 @@
         "storageAccountType": "Standard_LRS",
         "osDiskName": "[concat(variables('resourcePrefix'), '-dsk')]",
         "publicIPAddressName": "[concat(variables('resourcePrefix'), '-pip')]",
-        "publicIPAddressDNS": "[variables('resourcePrefix')]",
+        "publicIPAddressDNS": "[concat(variables('resourcePrefix'), '')]",
         "virtualNetworkName": "[concat(variables('resourcePrefix'), '-vnet')]",
         "networkSecurityGroupName": "[concat(variables('resourcePrefix'), '-nsg')]",
         "nicName": "[concat(variables('resourcePrefix'), '-nic')]",
@@ -79,7 +91,8 @@
         "applicationGatewayTier": "WAF",
         "applicationGatewayCapacity": 2,
         "roleDefinition_Contributor": "[concat('/subscriptions/',subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
-        "roleAssignment_Contributor": "[guid(resourceGroup().id, variables('virtualNetworkName'), deployment().name)]"
+        "roleAssignment_Contributor": "[guid(resourceGroup().id, variables('virtualNetworkName'), deployment().name)]",
+        "artifactory_port": "[if(equals(parameters('artifactoryLicenseKey'), ''), 8081, 443)]"
     },
     "resources": [
         {
@@ -113,7 +126,7 @@
             "name": "[variables('publicIPAddressName')]",
             "location": "[resourceGroup().location]",
             "properties": {
-                "publicIPAllocationMethod": "Dynamic",
+                "publicIPAllocationMethod": "Static",
                 "dnsSettings": {
                     "domainNameLabel": "[variables('publicIPAddressDNS')]"
                 }
@@ -144,12 +157,12 @@
                         }
                     },
                     {
-                        "name": "http-rule",
+                        "name": "artifactory-rule",
                         "properties": {
-                            "description": "Allow HTTP",
+                            "description": "Allow Artifactory",
                             "protocol": "Tcp",
                             "sourcePortRange": "*",
-                            "destinationPortRange": "8081",
+                            "destinationPortRange": "[variables('artifactory_port')]",
                             "sourceAddressPrefix": "Internet",
                             "destinationAddressPrefix": "*",
                             "access": "Allow",
@@ -178,7 +191,15 @@
                             "addressPrefix": "[variables('sNetAddressPrefixes_artifactory')]",
                             "networkSecurityGroup": {
                                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
-                            }
+                            },
+                            "serviceEndpoints": [
+                                {
+                                  "service": "Microsoft.Sql",
+                                  "locations": [
+                                    "[resourceGroup().location]"
+                                  ]
+                                }
+                              ]
                         }
                     },
                     {
@@ -210,6 +231,9 @@
                         "name": "ipconfig1",
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+                            },
                             "subnet": {
                                 "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), 'artifactory')]"
                             }
@@ -310,9 +334,10 @@
                         "autoUpgradeMinorVersion": true,
                         "settings": {
                             "fileUris": [
-                                "[concat(parameters('_artifactsLocation'), '/azuredeploy.sh', parameters('_artifactsLocationSasToken'))]"
+                                "[concat(parameters('_artifactsLocation'), '/azuredeploy.sh', parameters('_artifactsLocationSasToken'))]",
+                                "[concat(parameters('_artifactsLocation'), '/azuredeploy.nginx', parameters('_artifactsLocationSasToken'))]"
                             ],
-                            "commandToExecute": "[concat('find ./ -type f -name azuredeploy.sh -exec sh \"{}\" \"', parameters('artifactoryAdminPassword') ,'\" \"', parameters('adminUsername') ,'\" \"', parameters('adminPassword') ,'\" \"', variables('databaseServer') ,'\" \"', variables('databaseName'),'\" \"', variables('storageAccountName'),'\" \"', listKeys(variables('storageAccountName'),'2017-10-01').keys[0].value, '\" \\;')]"
+                            "commandToExecute": "[concat('find ./ -type f -name azuredeploy.sh -exec sh \"{}\" \"', parameters('artifactoryAdminPassword') ,'\" \"', parameters('adminUsername') ,'\" \"', parameters('adminPassword') ,'\" \"', variables('databaseServer') ,'\" \"', variables('databaseName'),'\" \"', variables('storageAccountName'),'\" \"', listKeys(variables('storageAccountName'),'2017-10-01').keys[0].value,'\" \"', parameters('artifactoryLicenseKey'),'\" \"', parameters('customDomainName'),'\" \"', parameters('customDomainCertificateCrt'),'\" \"', parameters('customDomainCertificateKey'), '\" \\;')]"
                         }
                     }
                 }
@@ -346,180 +371,20 @@
                     }
                 },
                 {
-                    "type": "firewallrules",
-                    "name": "AllowAccess",
+                    "type": "virtualNetworkRules",
+                    "name": "artifactory",
                     "location": "[resourceGroup().location]",
-                    "apiVersion": "2014-04-01",
+                    "apiVersion": "2015-05-01-preview",
                     "dependsOn": [
                         "[resourceId('Microsoft.Sql/servers', variables('databaseServer'))]",
-                        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+                        "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]"
                     ],
-                    "properties": {
-                        "startIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))).ipAddress]",
-                        "endIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))).ipAddress]"
-                    }
+                    "properties" :{
+                        "virtualNetworkSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), 'artifactory')]",
+                        "ignoreMissingVnetServiceEndpoint": true
+                    }   
                 }
             ]
-        },
-        {
-            "apiVersion": "2017-06-01",
-            "name": "[variables('applicationGatewayName')]",
-            "type": "Microsoft.Network/applicationGateways",
-            "location": "[resourceGroup().location]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
-                "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]",
-                "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
-            ],
-            "properties": {
-                "sku": {
-                    "name": "[variables('applicationGatewaySku')]",
-                    "tier": "[variables('applicationGatewayTier')]",
-                    "capacity": "[variables('applicationGatewayCapacity')]"
-                },
-                "sslCertificates": [
-                    {
-                        "name": "appGatewayFrontEndSslCert",
-                        "properties": {
-                            "data": "[parameters('frontendCertData')]",
-                            "password": "[parameters('frontendCertPassword')]"
-                        }
-                    }
-                ],
-                "gatewayIPConfigurations": [
-                    {
-                        "name": "appGatewayIpConfig",
-                        "properties": {
-                            "subnet": {
-                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), 'gateway')]"
-                            }
-                        }
-                    }
-                ],
-                "frontendIPConfigurations": [
-                    {
-                        "name": "appGatewayFrontendIP",
-                        "properties": {
-                            "PublicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
-                            }
-                        }
-                    }
-                ],
-                "frontendPorts": [
-                    {
-                        "name": "appGatewayFrontendPort80",
-                        "properties": {
-                            "Port": 80
-                        }
-                    },
-                    {
-                        "name": "appGatewayFrontendPort443",
-                        "properties": {
-                            "Port": 443
-                        }
-                    }
-                ],
-                "backendAddressPools": [
-                    {
-                        "name": "appGatewayBackendPool",
-                        "properties": {
-                            "BackendAddresses": [
-                                {
-                                    "IpAddress": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('nicName')), '2016-09-01').ipConfigurations[0].properties.privateIPAddress]"
-                                }
-                            ]
-                        }
-                    }
-                ],
-                "backendHttpSettingsCollection": [
-                    {
-                        "name": "appGatewayBackendHttpSettings",
-                        "properties": {
-                            "Port": 80,
-                            "Protocol": "Http",
-                            "CookieBasedAffinity": "Disabled"
-                        }
-                    },
-                    {
-                        "name": "appGatewayBackendHttpsSettings",
-                        "properties": {
-                            "Port": 443,
-                            "Protocol": "Https",
-                            "CookieBasedAffinity": "Disabled"
-                        }
-                    }
-                ],
-                "httpListeners": [
-                    {
-                        "name": "appGatewayHttpListener",
-                        "properties": {
-                            "FrontendIPConfiguration": {
-                                "Id": "[concat(variables('applicationGatewayID'), '/frontendIPConfigurations/appGatewayFrontendIP')]"
-                            },
-                            "FrontendPort": {
-                                "Id": "[concat(variables('applicationGatewayID'), '/frontendPorts/appGatewayFrontendPort80')]"
-                            },
-                            "Protocol": "Http",
-                            "SslCertificate": null
-                        }
-                    },
-                    {
-                        "name": "appGatewayHttpsListener",
-                        "properties": {
-                            "FrontendIPConfiguration": {
-                                "Id": "[concat(variables('applicationGatewayID'), '/frontendIPConfigurations/appGatewayFrontendIP')]"
-                            },
-                            "FrontendPort": {
-                                "Id": "[concat(variables('applicationGatewayID'), '/frontendPorts/appGatewayFrontendPort443')]"
-                            },
-                            "Protocol": "Https",
-                            "SslCertificate": {
-                                "Id": "[concat(variables('applicationGatewayID'), '/sslCertificates/appGatewayFrontEndSslCert')]"
-                            }
-                        }
-                    }
-                ],
-                "requestRoutingRules": [
-                    {
-                      "Name": "HTTPRule",
-                      "properties": {
-                        "RuleType": "Basic",
-                        "httpListener": {
-                          "id": "[concat(variables('applicationGatewayID'), '/httpListeners/appGatewayHttpListener')]"
-                        },
-                        "backendAddressPool": {
-                          "id": "[concat(variables('applicationGatewayID'), '/backendAddressPools/appGatewayBackendPool')]"
-                        },
-                        "backendHttpSettings": {
-                          "id": "[concat(variables('applicationGatewayID'), '/backendHttpSettingsCollection/appGatewayBackendHttpSettings')]"
-                        }
-                      }
-                    },
-                    {
-                      "Name": "HTTPSRule",
-                      "properties": {
-                        "RuleType": "Basic",
-                        "httpListener": {
-                          "id": "[concat(variables('applicationGatewayID'), '/httpListeners/appGatewayHttpsListener')]"
-                        },
-                        "backendAddressPool": {
-                          "id": "[concat(variables('applicationGatewayID'), '/backendAddressPools/appGatewayBackendPool')]"
-                        },
-                        "backendHttpSettings": {
-                          "id": "[concat(variables('applicationGatewayID'), '/backendHttpSettingsCollection/appGatewayBackendHttpsSettings')]"
-                        }
-                      }
-                    }
-                  ],
-                "webApplicationFirewallConfiguration": {
-                    "enabled": "true",
-                    "firewallMode": "Prevention",
-                    "ruleSetType": "OWASP",
-                    "ruleSetVersion": "3.0",
-                    "disabledRuleGroups": []
-                }
-            }
         }
     ],
     "outputs": {}
