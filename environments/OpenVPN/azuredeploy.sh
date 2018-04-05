@@ -103,7 +103,12 @@ sudo tee /etc/openvpn/easy-rsa/create_client_keys.sh << END
 LOG="\$(pwd)/create_client_keys.log"
 rm -f $LOG
 source ./vars
-./pkitool server 2>&1 | tee -a \$LOG
+
+## Note: if you get a 'TXT_DB error number 2' error you may need to specify
+## a unique KEY_CN, for example: KEY_CN=client ./pkitool client
+KEY_CN=client 
+
+./pkitool client 2>&1 | tee -a \$LOG
 END
 
 # Generate client keys
@@ -111,7 +116,7 @@ cd /etc/openvpn/easy-rsa
 sudo bash create_client_keys.sh
 
 # Create client OpenVPN config file
-sudo tee /etc/openvpn/easy-rsa/client.ovpn << END
+sudo tee /etc/openvpn/easy-rsa/keys/client.ovpn << END
 ### Client configuration file for OpenVPN
 
 # Specify that this is a client
@@ -149,20 +154,20 @@ tls-auth ta.key 1
 cipher BF-CBC
 
 # Use compression
-comp-lzo
+# comp-lzo
 
 # Log verbosity (to help if there are problems)
 verb 3
 END
 
 # Upload client config to storage account
-sudo az login --msi
-sudo az storage container create --name client --connection-string "DefaultEndpointsProtocol=https;AccountName=$PARAM_STORAGE_ACCOUNT;AccountKey=$PARAM_STORAGE_KEY;EndpointSuffix=core.windows.net"
-sudo az storage blob upload --container-name client --file /etc/openvpn/easy-rsa/client.ovpn --name client.ovpn
-sudo az storage blob upload --container-name client --file /etc/openvpn/easy-rsa/ca.crt --name ca.crt
-sudo az storage blob upload --container-name client --file /etc/openvpn/easy-rsa/client.crt --name client.crt
-sudo az storage blob upload --container-name client --file /etc/openvpn/easy-rsa/client.key --name client.key
-sudo az storage blob upload --container-name client --file /etc/openvpn/easy-rsa/ta.key --name ta.key
+CONTAINER_NAME="client"
+sudo az storage container create --account-name $PARAM_STORAGE_ACCOUNT --account-key $PARAM_STORAGE_KEY --name $CONTAINER_NAME
+sudo az storage blob upload --account-name $PARAM_STORAGE_ACCOUNT --account-key $PARAM_STORAGE_KEY --container-name $CONTAINER_NAME --file /etc/openvpn/easy-rsa/keys/client.ovpn --name client.ovpn
+sudo az storage blob upload --account-name $PARAM_STORAGE_ACCOUNT --account-key $PARAM_STORAGE_KEY --container-name $CONTAINER_NAME --file /etc/openvpn/easy-rsa/keys/ca.crt --name ca.crt
+sudo az storage blob upload --account-name $PARAM_STORAGE_ACCOUNT --account-key $PARAM_STORAGE_KEY --container-name $CONTAINER_NAME --file /etc/openvpn/easy-rsa/keys/client.crt --name client.crt
+sudo az storage blob upload --account-name $PARAM_STORAGE_ACCOUNT --account-key $PARAM_STORAGE_KEY --container-name $CONTAINER_NAME --file /etc/openvpn/easy-rsa/keys/client.key --name client.key
+sudo az storage blob upload --account-name $PARAM_STORAGE_ACCOUNT --account-key $PARAM_STORAGE_KEY --container-name $CONTAINER_NAME --file /etc/openvpn/easy-rsa/keys/ta.key --name ta.key
 
 # Create server UP script
 sudo tee /etc/openvpn/up.sh << END
@@ -192,7 +197,7 @@ tls-server
 
 local $GW_LOCALIP ## ip/hostname of server
 port 1194 ## default openvpn port
-proto udp
+proto tcp ## udp
 
 #bridging directive
 dev tap0 ## If you need multiple tap devices, add them here
@@ -211,7 +216,7 @@ dh dh2048.pem
 tls-auth ta.key 0 # This file is secret
 
 cipher BF-CBC        # Blowfish (default)
-comp-lzo
+## comp-lzo
 
 #DHCP Information
 ifconfig-pool-persist ipp.txt
