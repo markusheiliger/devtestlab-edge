@@ -14,46 +14,48 @@ PARAM_CUSTOMDOMAIN_SSLKEY=${11}
 
 LOCAL_IP=$(ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1  -d'/')
 
-echo "Import the Microsoft repository key and create repository info ..."  >&2
-sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
-echo -e "[azure-cli]\nname=Azure CLI\nbaseurl=https://packages.microsoft.com/yumrepos/azure-cli\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc"  | sudo tee /etc/yum.repos.d/azure-cli.repo
-sudo curl -s https://packages.microsoft.com/config/rhel/7/prod.repo > /etc/yum.repos.d/msprod.repo
+echo "### Register Microsoft repository for Ubuntu ..."  >&2
+curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
 
-echo "### Installing utilities ..." >&2
-sudo ACCEPT_EULA=Y yum install -y java-1.8.0-openjdk samba-client samba-common cifs-utils azure-cli mssql-tools unixODBC-devel
+echo "### Register Azure CLI repository for Ubuntu ..."  >&2
+echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
+sudo apt-key adv --keyserver packages.microsoft.com --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893
 
-echo "### Login Azure CLI ..." >&2
-sudo az login --msi
+if [ -z "$PARAM_ARTIFACTORY_LIC" ]; then
+    echo "### Register JFrog OSS repository for Ubuntu ..."  >&2
+    echo "deb https://jfrog.bintray.com/artifactory-debs $(lsb_release -cs) main" | sudo tee -a /etc/apt/sources.list
+    curl https://bintray.com/user/downloadSubjectPublicKey?username=jfrog | sudo apt-key add -
+else
+    echo "### Register JFrog PRO repository for Ubuntu ..."  >&2
+    echo "deb https://jfrog.bintray.com/artifactory-pro-debs $(lsb_release -cs) main" | sudo tee -a /etc/apt/sources.list
+    curl https://bintray.com/user/downloadSubjectPublicKey?username=jfrog | sudo apt-key add -
+fi
 
-echo "### Preparing openjdk 1.8.0 - set JAVA_HOME ..." >&2
+echo "### Updating & upgrading repositories"
+sudo apt-get update && sudo apt-get upgrade -y
+
+echo "### Installing packages ..." >&2
+sudo ACCEPT_EULA=Y apt-get install -y apt-transport-https azure-cli openjdk-8-jre cifs-utils mssql-tools unixodbc-dev libssl-dev libffi-dev python-dev build-essential
+
+echo "### Setting JAVA_HOME ..." >&2
 echo "JAVA_HOME=\"$(find /usr/lib/jvm -type f -name java | sed -r 's|/[^/]+$||' | sed -r 's|/[^/]+$||')/\"" | sudo tee --append /etc/environment > /dev/null
 
-if [[ -z "$PARAM_ARTIFACTORY_LIC" ]]; then
+if [ -z "$PARAM_ARTIFACTORY_LIC" ]; then
 
     echo "### Installing artifactory OSS ..." >&2
-    wget https://bintray.com/jfrog/artifactory-rpms/rpm -O bintray-jfrog-artifactory-rpms.repo
-    sudo mv bintray-jfrog-artifactory-rpms.repo /etc/yum.repos.d/
-    sudo yum install -y jfrog-artifactory-oss
+    sudo apt-get install jfrog-artifactory-oss
 
 else
 
     echo "### Installing artifactory PRO ..." >&2
-    wget https://bintray.com/jfrog/artifactory-pro-rpms/rpm -O bintray-jfrog-artifactory-pro-rpms.repo
-    sudo mv bintray-jfrog-artifactory-pro-rpms.repo /etc/yum.repos.d/
-    sudo yum install -y jfrog-artifactory-pro
+    sudo apt-get install jfrog-artifactory-pro
 
     echo "### Installing nginx ..." >&2
-    sudo tee /etc/yum.repos.d/nginx.repo << END
-[nginx]
-name=nginx repo
-baseurl=http://nginx.org/packages/mainline/rhel/7/\$basearch/
-gpgcheck=0
-enabled=1
-END
-    sudo yum install -y nginx
+    sudo apt-get install -y nginx
 
-    echo "### Fixing nginx httpd permissions ..." >&2
-    sudo setsebool httpd_can_network_connect on -P
+    # echo "### Fixing nginx httpd permissions ..." >&2
+    # sudo setsebool httpd_can_network_connect on -P
 fi
 
 
@@ -66,10 +68,15 @@ ARTIFACTORY_HOME=/var/opt/jfrog/artifactory
 ARTIFACTORY_USER=artifactory
 ARTIFACTORY_PWD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 ARTIFACTORY_JDBC_URL=https://download.microsoft.com/download/0/2/A/02AAE597-3865-456C-AE7F-613F99F850A8/sqljdbc_6.0.8112.200_enu.tar.gz
-#ARTIFACTORY_JDBC_URL=https://download.microsoft.com/download/F/0/F/F0FF3F95-D42A-46AF-B0F9-8887987A2C4B/sqljdbc_4.2.8112.200_enu.tar.gz
+
+echo "### Enable unauthenticated artifactory system health check ..." >&2
+sudo tee -a $ARTIFACTORY_HOME/etc/artifactory.system.properties << END
+## Enable System Health Ping without authentication
+artifactory.ping.allowUnauthenticated=true
+END
 
 echo "### Configure storage ..." >&2
-sudo az storage share create --name filestore --connection-string "DefaultEndpointsProtocol=https;AccountName=$PARAM_STORAGE_ACCOUNT;AccountKey=$PARAM_STORAGE_KEY;EndpointSuffix=core.windows.net"
+sudo az storage share create --name filestore --account-name $PARAM_STORAGE_ACCOUNT --account-key $PARAM_STORAGE_KEY
 
 sudo mkdir /mnt/filestore
 echo "//$PARAM_STORAGE_ACCOUNT.file.core.windows.net/filestore /mnt/filestore cifs nofail,vers=3.0,username=$PARAM_STORAGE_ACCOUNT,password=$PARAM_STORAGE_KEY,dir_mode=0777,file_mode=0777,serverino" | sudo tee -a /etc/fstab
@@ -103,20 +110,19 @@ $SQLCMD_HOME/sqlcmd -S tcp:$PARAM_DATABASE_SERVER.database.windows.net,1433 -d $
 
 echo "### Starting artifactory as service ..." >&2
 sudo service artifactory start
-sleep 30
 
 echo "### Waiting for artifactory to become available ..." >&2
-while $(curl -s http://localhost:8081/artifactory | grep -q "Starting Up"); do
-    printf '.'
+while [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8081/artifactory/api/system/ping)" -ne "200" ]; do
+    echo "--- Sleeping for 5 seconds ..." >&2
     sleep 5
 done
 
-if [[ ! -z "$PARAM_ARTIFACTORY_LIC" ]]; then
+if [ ! -z "$PARAM_ARTIFACTORY_LIC" ]; then
 
     echo "### Updating artifactory license key ..." >&2
-    sudo curl -sX POST -u admin:password -H "Content-type: application/json" -d "{ \"licenseKey\": \"$PARAM_ARTIFACTORY_LIC\" }" http://localhost:8081/artifactory/api/system/license
+    sudo curl -X POST -u admin:password -H "Content-type: application/json" -d "{ \"licenseKey\": \"$PARAM_ARTIFACTORY_LIC\" }" http://localhost:8081/artifactory/api/system/license
 
-    if [[ -z "$PARAM_CUSTOMDOMAIN_NAME" ]]; then
+    if [ -z "$PARAM_CUSTOMDOMAIN_NAME" ]; then
 
         VM_NAME=$(curl -H Metadata:true "http://169.254.169.254/metadata/instance/compute/name?api-version=2017-08-01&format=text")
         VM_LOCATION=$(curl -H Metadata:true "http://169.254.169.254/metadata/instance/compute/location?api-version=2017-08-01&format=text")
@@ -129,7 +135,9 @@ if [[ ! -z "$PARAM_ARTIFACTORY_LIC" ]]; then
     
     echo "### Creating cert files ..." >&2
     sudo mkdir /etc/nginx/ssl
-    if [[ "$PARAM_CUSTOMDOMAIN_NAME" == *.cloudapp.azure.com ]]; then
+    #if [ "$PARAM_CUSTOMDOMAIN_NAME" == *.cloudapp.azure.com ]; then
+    if [[ $PARAM_CUSTOMDOMAIN_NAME =~ \.cloudapp\.azure\.com$ ]]; then
+        echo "--- Self signed certificate ..." >&2
         sudo openssl req -subj "/CN=$PARAM_CUSTOMDOMAIN_NAME/O=unknown/C=US" -new -newkey rsa:2048 -days 365 -nodes -x509 -keyout $PARAM_CUSTOMDOMAIN_SSLKEY_FILE -out $PARAM_CUSTOMDOMAIN_SSLCRT_FILE
     else
         echo $PARAM_CUSTOMDOMAIN_SSLKEY | base64 --decode | sudo tee $PARAM_CUSTOMDOMAIN_SSLKEY_FILE
@@ -138,25 +146,20 @@ if [[ ! -z "$PARAM_ARTIFACTORY_LIC" ]]; then
 
     echo "### Creating site configuration ..." >&2
     sudo curl -sX POST -u admin:password -H "Content-type: application/json" -d "{\"key\":\"nginx\",\"artifactoryAppContext\":\"artifactory\",\"publicAppContext\":\"\",\"serverName\":\"$PARAM_CUSTOMDOMAIN_NAME\",\"artifactoryServerName\":\"localhost\",\"artifactoryPort\":8081,\"dockerReverseProxyMethod\":\"REPOPATHPREFIX\",\"useHttps\":true,\"useHttp\":false,\"httpsPort\":443,\"httpPort\":80,\"upStreamName\":\"artifactory\",\"webServerType\":\"NGINX\",\"sslKey\":\"/etc/nginx/ssl/$PARAM_CUSTOMDOMAIN_NAME.key\",\"sslCertificate\":\"/etc/nginx/ssl/$PARAM_CUSTOMDOMAIN_NAME.crt\"}" http://localhost:8081/artifactory/api/system/configuration/webServer
-    sudo curl -sX GET  -u admin:password http://localhost:8081/artifactory/api/system/configuration/reverseProxy/nginx | sudo tee /etc/nginx/conf.d/$PARAM_CUSTOMDOMAIN_NAME.conf
+    sudo curl -sX GET  -u admin:password http://localhost:8081/artifactory/api/system/configuration/reverseProxy/nginx | sudo tee /etc/nginx/sites-available/$PARAM_CUSTOMDOMAIN_NAME.conf
 
     echo "### Enabling site configuration ..." >&2
-    sudo mkdir /etc/nginx/sites-enabled
-    sudo ln -s /etc/nginx/conf.d/$PARAM_CUSTOMDOMAIN_NAME.conf /etc/nginx/sites-enabled/$PARAM_CUSTOMDOMAIN_NAME.conf
+    sudo ln -s /etc/nginx/sites-available/$PARAM_CUSTOMDOMAIN_NAME.conf /etc/nginx/sites-enabled/$PARAM_CUSTOMDOMAIN_NAME.conf
+
+    echo "### Disabling SSL settings in global nginx configuration ..."
+    sudo sed -i 's/ssl_/# ssl_/g' /etc/nginx/nginx.conf
 
     echo "### Starting nginx as service ..." >&2
-    sudo chkconfig nginx on
     sudo service nginx restart
+else
+    echo "### No license key available - skip nginx installation ..." >&2
 fi
 
 echo "### Changing default admin password ..." >&2
 sudo curl -sX POST -u admin:password -H "Content-type: application/json" -d "{ \"userName\" : \"admin\", \"oldPassword\" : \"password\", \"newPassword1\" : \"$PARAM_ARTIFACTORY_ADMIN_PASSWORD\", \"newPassword2\" : \"$PARAM_ARTIFACTORY_ADMIN_PASSWORD\" }" http://localhost:8081/artifactory/api/security/users/authorization/changePassword
-
-echo "### Open firewall ports and reload ..." >&2
-if [[ ! -z "$PARAM_ARTIFACTORY_LIC" ]]; then
-    sudo firewall-cmd --zone=public --add-port=443/tcp --permanent
-fi
-sudo firewall-cmd --zone=public --add-port=8081/tcp --permanent
-sudo firewall-cmd --reload
-
 
