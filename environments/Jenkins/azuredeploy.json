@@ -1,49 +1,243 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "adminUsername": {
+            "type": "string",
+            "minLength": 3,
+            "metadata": {
+                "description": "The admin username."
+            }
+        },
+        "adminPublicKey": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Certificate public key used to authenticate with VMs through SSH. The certificate must be in PEM format with or without headers."
+            }
+        },
+        "_artifactsLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "The base URI where artifacts required by this template are located. When the template is deployed using the accompanying scripts, a private location in the subscription will be used and this value will be automatically generated."
+            },
+            "defaultValue": "https://raw.githubusercontent.com/markusheiliger/devtestlab-edge/master/environments/Jenkins"
+        },
+        "_artifactsLocationSasToken": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The sasToken required to access _artifactsLocation.  When the template is deployed using the accompanying scripts, a sasToken will be automatically generated."
+            },
+            "defaultValue": ""
+        }
     },
     "variables": {
-        "servicePlanTier": "Basic",
-        "servicePlanSku": "B1",
-        "hostingSiteName": "[toLower(concat(resourceGroup().name, '-', uniqueString(resourceGroup().id)))]",
-        "hostingPlanName": "[toLower(concat(variables('hostingSiteName'), '-serviceplan'))]"
+        "serviceName": "jenkins",
+        "servicePort": 443,
+        "resourcePrefix": "[concat(variables('serviceName'), uniqueString(resourceGroup().id))]",
+        "vmName": "[concat(variables('resourcePrefix'), '-vm')]",
+        "vmSize": "Standard_DS2_v2",
+        "osDiskName": "[concat(variables('resourcePrefix'), '-dsk')]",
+        "publicIPAddressName": "[concat(variables('resourcePrefix'), '-pip')]",
+        "publicIPAddressDNS": "[concat(variables('resourcePrefix'), '')]",
+        "virtualNetworkName": "[concat(variables('resourcePrefix'), '-vnet')]",
+        "networkSecurityGroupName": "[concat(variables('resourcePrefix'), '-nsg')]",
+        "nicName": "[concat(variables('resourcePrefix'), '-nic')]",
+        "vNetAddressPrefixes": "192.168.42.0/24",
+        "sNetAddressPrefixes": "192.168.42.0/24",
+        "imagePublisher": "Canonical",
+        "imageOffer": "UbuntuServer",
+        "imageSKU": "16.04-LTS"
     },
     "resources": [
         {
-            "type": "Microsoft.Web/sites",
-            "name": "[variables('hostingSiteName')]",
-            "apiVersion": "2016-03-01",
+            "apiVersion": "2016-09-01",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[variables('publicIPAddressName')]",
             "location": "[resourceGroup().location]",
-            "dependsOn": [
-                "[variables('hostingPlanName')]"
-            ],
             "properties": {
-                "siteConfig": {
-                    "linuxFxVersion": "DOCKER|jenkins/jenkins:lts"
-                },
-                "name": "[variables('hostingSiteName')]",
-                "serverFarmId": "[variables('hostingPlanName')]",
-                "hostingEnvironment": ""
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[variables('publicIPAddressDNS')]"
+                }
             }
         },
         {
-            "apiVersion": "2016-09-01",
-            "name": "[variables('hostingPlanName')]",
-            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[variables('networkSecurityGroupName')]",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "NSG - Front End"
+            },
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "ssh-rule",
+                        "properties": {
+                            "description": "Allow SSH",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "22",
+                            "sourceAddressPrefix": "Internet",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "[concat(variables('serviceName'), '-rule')]",
+                        "properties": {
+                            "description": "[concat('Allow ', variables('serviceName'))]",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "[variables('servicePort')]",
+                            "sourceAddressPrefix": "Internet",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 110,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2018-01-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[variables('virtualNetworkName')]",
             "location": "[resourceGroup().location]",
             "properties": {
-                "name": "[variables('hostingPlanName')]",
-                "workerSizeId": "1",
-                "reserved": true,
-                "numberOfWorkers": "1",
-                "hostingEnvironment": ""
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('vNetAddressPrefixes')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('serviceName')]",
+                        "properties": {
+                            "addressPrefix": "[variables('sNetAddressPrefixes')]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
+                            }
+                        }
+                    }
+                ]
             },
-            "sku": {
-                "Tier": "[variables('servicePlanTier')]",
-                "Name": "[variables('servicePlanSku')]"
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
+            ]
+        },
+        {
+            "apiVersion": "2016-09-01",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[variables('nicName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('serviceName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2017-03-30",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[variables('vmName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[variables('vmSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[variables('vmName')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "linuxConfiguration": {
+                        "disablePasswordAuthentication": true,
+                        "ssh": {
+                            "publicKeys": [
+                                {
+                                    "path": "[concat('/home/',parameters('adminUsername'),'/.ssh/authorized_keys')]",
+                                    "keyData": "[parameters('adminPublicKey')]"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[variables('imagePublisher')]",
+                        "offer": "[variables('imageOffer')]",
+                        "sku": "[variables('imageSKU')]",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "[variables('osDiskName')]",
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS"
+                        }
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+                        }
+                    ]
+                }
             },
-            "kind": "linux"
+            "resources": [
+                {
+                    "type": "extensions",
+                    "name": "Initialize",
+                    "apiVersion": "2015-06-15",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+                    ],
+                    "properties": {
+                        "publisher": "Microsoft.Azure.Extensions",
+                        "type": "CustomScript",
+                        "typeHandlerVersion": "2.0",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "fileUris": [
+                                "[concat(parameters('_artifactsLocation'), '/azuredeploy.sh', parameters('_artifactsLocationSasToken'))]"
+                            ],
+                            "commandToExecute": "[concat('find ./ -type f -name azuredeploy.sh -exec sh \"{}\" \\;')]"
+                        }
+                    }
+                }
+            ]
         }
-    ]
+    ],
+    "outputs": {
+        "puttyCommand": {
+            "type": "string",
+            "value": "[concat('putty -ssh ', parameters('adminUsername'), '@', reference(variables('publicIPAddressName')).ipAddress)]"
+        },
+        "fqdn": {
+            "type": "string",
+            "value": "[concat('https://', reference(variables('publicIPAddressName')).dnsSettings.fqdn)]"
+        }
+    }
 }
