@@ -187,13 +187,5 @@
         }
     ],
     "outputs": {
-        "puttyCommand": {
-            "type": "string",
-            "value": "[concat('putty -ssh ', parameters('adminUsername'), '@', reference(variables('publicIPAddressName')).ipAddress)]"
-        },
-        "fqdn": {
-            "type": "string",
-            "value": "[concat('https://', reference(variables('publicIPAddressName')).dnsSettings.fqdn)]"
-        }
     }
 }
