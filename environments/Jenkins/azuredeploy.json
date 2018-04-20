@@ -15,6 +15,12 @@
                 "description": "Certificate public key used to authenticate with VMs through SSH. The certificate must be in PEM format with or without headers."
             }
         },
+        "_labSubnetId": {
+            "type": "string",
+            "metadata": {
+                "description": "Resource Id of the lab's subnet this environment should be connected to."
+            }
+        },
         "_artifactsLocation": {
             "type": "string",
             "metadata": {
@@ -37,30 +43,13 @@
         "vmName": "[concat(variables('resourcePrefix'), '-vm')]",
         "vmSize": "Standard_DS2_v2",
         "osDiskName": "[concat(variables('resourcePrefix'), '-dsk')]",
-        "publicIPAddressName": "[concat(variables('resourcePrefix'), '-pip')]",
-        "publicIPAddressDNS": "[concat(variables('resourcePrefix'), '')]",
-        "virtualNetworkName": "[concat(variables('resourcePrefix'), '-vnet')]",
         "networkSecurityGroupName": "[concat(variables('resourcePrefix'), '-nsg')]",
         "nicName": "[concat(variables('resourcePrefix'), '-nic')]",
-        "vNetAddressPrefixes": "192.168.42.0/24",
-        "sNetAddressPrefixes": "192.168.42.0/24",
         "imagePublisher": "Canonical",
         "imageOffer": "UbuntuServer",
         "imageSKU": "16.04-LTS"
     },
     "resources": [
-        {
-            "apiVersion": "2016-09-01",
-            "type": "Microsoft.Network/publicIPAddresses",
-            "name": "[variables('publicIPAddressName')]",
-            "location": "[resourceGroup().location]",
-            "properties": {
-                "publicIPAllocationMethod": "Static",
-                "dnsSettings": {
-                    "domainNameLabel": "[variables('publicIPAddressDNS')]"
-                }
-            }
-        },
         {
             "apiVersion": "2015-06-15",
             "type": "Microsoft.Network/networkSecurityGroups",
@@ -103,33 +92,6 @@
             }
         },
         {
-            "apiVersion": "2018-01-01",
-            "type": "Microsoft.Network/virtualNetworks",
-            "name": "[variables('virtualNetworkName')]",
-            "location": "[resourceGroup().location]",
-            "properties": {
-                "addressSpace": {
-                    "addressPrefixes": [
-                        "[variables('vNetAddressPrefixes')]"
-                    ]
-                },
-                "subnets": [
-                    {
-                        "name": "[variables('serviceName')]",
-                        "properties": {
-                            "addressPrefix": "[variables('sNetAddressPrefixes')]",
-                            "networkSecurityGroup": {
-                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
-                            }
-                        }
-                    }
-                ]
-            },
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
-            ]
-        },
-        {
             "apiVersion": "2016-09-01",
             "type": "Microsoft.Network/networkInterfaces",
             "name": "[variables('nicName')]",
@@ -143,11 +105,8 @@
                         "name": "ipconfig1",
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
-                            "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
-                            },
                             "subnet": {
-                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('serviceName'))]"
+                                "id": "[parameters('_labSubnetId')]"
                             }
                         }
                     }
