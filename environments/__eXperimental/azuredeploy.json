@@ -39,10 +39,6 @@
         "KeyVaultId": {
             "type": "string",
             "value": "$(LabKeyVaultId)"
-        },
-        "ClientId": {
-            "type": "string",
-            "value": "[reference(concat(deployment().name, '-secrets')).outputs.ClientId.value]"
         }
     }
 }
