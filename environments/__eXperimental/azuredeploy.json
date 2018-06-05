@@ -30,7 +30,14 @@
                     "uri": "[concat(parameters('_artifactsLocation'), '/azuredeploy.secret.json', parameters('_artifactsLocationSasToken'))]"
                 },
                 "parameters" :{
-                    "KeyVaultId": { "value": "$(LabKeyVaultId)" }
+                    "ClientId": {
+                        "reference": {
+                            "keyVault": {
+                                "id": "$(LabKeyVaultId)"
+                            },
+                            "secretName": "ClientId"
+                        }
+                    }
                 }
             }
         }
