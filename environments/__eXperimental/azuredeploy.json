@@ -18,24 +18,34 @@
         }
     },
     "variables": {
+        "secretsKeyVaultId": "$(LabKeyVaultId)",
+        "secretsDeployment": "[concat(deployment().name, '-secrets')]"
     },
     "resources": [
         {
             "apiVersion": "2017-05-10",
-            "name": "[concat(deployment().name, '-secrets')]",
+            "name": "[variables('secretsDeployment')]",
             "type": "Microsoft.Resources/deployments",
             "properties": {
                 "mode": "Incremental",
-                "templateLink" : {
+                "templateLink": {
                     "uri": "[concat(parameters('_artifactsLocation'), '/azuredeploy.secret.json', parameters('_artifactsLocationSasToken'))]"
                 },
-                "parameters" :{
+                "parameters": {
                     "ClientId": {
                         "reference": {
                             "keyVault": {
-                                "id": "$(LabKeyVaultId)"
+                                "id": "[variables('secretsKeyVaultId')]"
                             },
                             "secretName": "ClientId"
+                        }
+                    },
+                    "ClientSecret": {
+                        "reference": {
+                            "keyVault": {
+                                "id": "[variables('secretsKeyVaultId')]"
+                            },
+                            "secretName": "ClientSecret"
                         }
                     }
                 }
@@ -45,7 +55,15 @@
     "outputs": {
         "KeyVaultId": {
             "type": "string",
-            "value": "$(LabKeyVaultId)"
+            "value": "[variables('secretsKeyVaultId')]"
+        },
+        "ClientId": {
+            "type": "string",
+            "value": "[reference(variables('secretsDeployment')).outputs.ClientId.value]"
+        },
+        "ClientSecret": {
+            "type": "string",
+            "value": "[reference(variables('secretsDeployment')).outputs.ClientSecret.value]"
         }
     }
 }
