@@ -59,11 +59,11 @@
         },
         "ClientId": {
             "type": "string",
-            "value": "[reference(variables('secretsDeployment')).outputs.ClientId.value]"
+            "value": "[reference(variables('secretsDeployment')).outputs.ClientId]"
         },
         "ClientSecret": {
             "type": "string",
-            "value": "[reference(variables('secretsDeployment')).outputs.ClientSecret.value]"
+            "value": "[reference(variables('secretsDeployment')).outputs.ClientSecret]"
         }
     }
 }
